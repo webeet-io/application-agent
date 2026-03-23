@@ -31,10 +31,20 @@ CeeVee is a smart job opportunity agent. You describe what you're looking for in
 - Match scoring: % match per job per resume, with reasoning
 - Opportunity feed: ranked list of matched jobs
 - Application tracker: mark jobs as applied, record outcome
+- A Skill Section where a user can mention all of their skills and the Agent can update the resume with what is relevant for a specific application
+- Cover letter builder (scrape what the company does, what the core values are, and what can actually be of interest for the applicants) - v0 does not have to be the full cover letter, but bullet points of the important parts (scaffolding). 
 
 ### Should Have
 - Resume recommendation: which version to send + what to tweak for a specific role
 - Learning system: analyze past applications using RAG, surface patterns
+
+---
+
+## Insights
+
+- By comparing the CV to relevant applications, the Agent creates a backlog of relevant skills to learn next (i.g., if the agent sees the Docker is on 90% of application but not on the CV, it will prioritize learning it).
+
+---
 
 ### Out of Scope (for now)
 - Auto-apply
