@@ -32,7 +32,7 @@ CeeVee is a smart job opportunity agent. You describe what you're looking for in
 - Opportunity feed: ranked list of matched jobs
 - Application tracker: mark jobs as applied, record outcome
 - A Skill Section where a user can mention all of their skills and the Agent can update the resume with what is relevant for a specific application
-- Cover letter builder (scrape what the company does, what the core values are, and what can actually be of interest for the applicants) - v0 does not have to be the full cover letter, but bullet points of the important parts (scaffolding). 
+
 
 ### Should Have
 - Resume recommendation: which version to send + what to tweak for a specific role
@@ -50,6 +50,7 @@ CeeVee is a smart job opportunity agent. You describe what you're looking for in
 - Auto-apply
 - Multi-user / sharing
 - LinkedIn / Xing scraping
+- Cover letter builder (scrape what the company does, what the core values are, and what can actually be of interest for the applicants) - v0 does not have to be the full cover letter, but bullet points of the important parts (scaffolding). 
 
 ---
 
