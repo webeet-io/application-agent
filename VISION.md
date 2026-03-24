@@ -4,7 +4,7 @@
 
 This file describes the product vision and intended direction of the project.
 
-It is not the implementation guide for contributors or coding agents. For actual architectural rules and coding guidance, see [ARCHITECTURE.md](/Users/shenmay/Projects_/Webeet-io/application-agent/ARCHITECTURE.md).
+It is not the implementation guide for contributors or coding agents. For actual architectural rules and coding guidance, see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## What is CeeVee?
 

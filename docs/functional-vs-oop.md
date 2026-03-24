@@ -2,7 +2,7 @@
 
 ## Context
 
-Based on [VISION.md](/Users/shenmay/Projects_/Webeet-io/application-agent/VISION.md), this project is aiming for a clean domain-driven, hexagonal architecture with:
+Based on [VISION.md](../VISION.md), this project is aiming for a clean domain-driven, hexagonal architecture with:
 
 - clear ports and adapters
 - shared domain types
