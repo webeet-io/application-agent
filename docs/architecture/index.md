@@ -2,41 +2,66 @@
 
 This directory contains the approved software architecture for CeeVee.
 
+Primary audience:
+
+- implementation LLMs
+- planning agents
+- review agents
+
+Interpretation rule:
+
+- each file in this directory is authoritative only for its own topic
+- do not merge rules from multiple files when one file already owns the topic
+- use cross-references instead of inventing duplicate rules
+- if two files appear to overlap, prefer the file whose topic name most directly matches the question
+
 ## Documents
 
 - [overview.md](./overview.md)
-  Explains the architectural direction, governing principles, chosen runtime shape, and major tradeoffs.
+  Defines global architecture decisions, invariants, and non-goals.
 
 - [system-context.md](./system-context.md)
-  Describes the main actors, system boundaries, and end-to-end interaction flow.
+  Defines external actors, external dependencies, and high-level system flows.
 
 - [module-design.md](./module-design.md)
-  Defines the internal module structure, hexagonal boundaries, and ownership of core components.
+  Defines codebase placement, layering, and module ownership.
 
 - [interfaces.md](./interfaces.md)
-  Documents the main internal and external interfaces, including MCP tools and adapter-facing contracts.
+  Defines entry-point behavior and shared capability-layer rules for HTTP and MCP.
 
 - [boundaries.md](./boundaries.md)
-  Defines the major system boundaries, responsibility splits, and model separation rules of the architecture.
+  Defines cross-boundary constraints and “must not cross” rules.
 
 - [port-contracts.md](./port-contracts.md)
-  Defines the external-facing domain ports, their contract shape, ownership, and failure behavior.
+  Defines architectural port contracts for external dependencies.
+
+- [storage.md](./storage.md)
+  Defines storage responsibilities and relational-plus-vector storage semantics.
+
+- [user-perspective.md](./user-perspective.md)
+  Defines user-visible system behavior and the learning loop semantics.
 
 - [data-model.md](./data-model.md)
-  Defines the core entities, relationships, data lifecycle, and vector-search responsibilities.
+  Defines entities, relationships, lifecycle meaning, and truth-model rules.
 
 - [runtime-observability.md](./runtime-observability.md)
-  Describes runtime behavior, background processing, reliability concerns, and operational visibility.
+  Defines runtime semantics, sync-vs-async rules, triggers, and observability requirements.
 
 ## Relationship Between Documents
 
-- `overview.md` is the entry point for architectural decisions.
-- `system-context.md` explains how external actors interact with the system.
-- `module-design.md` explains how the system is structured internally.
-- `interfaces.md` defines the contracts that connect modules and external consumers.
-- `boundaries.md` defines where responsibility, runtime, and data-model boundaries must remain explicit.
-- `port-contracts.md` defines the domain-facing contracts that external adapters must satisfy.
-- `data-model.md` defines the persistent model used by the runtime modules.
-- `runtime-observability.md` explains how the architecture behaves in operation.
+- `overview.md` owns global architecture rules.
+- `system-context.md` owns outside-in system context.
+- `module-design.md` owns internal placement and layering.
+- `interfaces.md` owns entry-point semantics.
+- `boundaries.md` owns cross-boundary prohibitions.
+- `port-contracts.md` owns external dependency contracts.
+- `storage.md` owns storage-form semantics.
+- `user-perspective.md` owns product behavior from the user viewpoint.
+- `data-model.md` owns entity meaning and lifecycle semantics.
+- `runtime-observability.md` owns execution and trigger semantics.
 
-All documents in this directory describe the current approved architecture state only.
+Execution rule for downstream LLMs:
+
+- read only the files needed for the current task
+- do not infer implementation details when the owning file defines only architecture-level constraints
+- if a needed detail is not defined, preserve the existing architecture and avoid inventing new architecture silently

@@ -4,7 +4,22 @@ See also: [index.md](./index.md)
 
 ## Purpose
 
-This document defines the core architecture-level data model for CeeVee.
+This document defines entity meaning, entity relationships, lifecycle semantics, and truth-model rules.
+
+## Scope
+
+This file owns:
+
+- entity definitions
+- relationship meaning
+- lifecycle meaning
+- truth-model distinctions between business data and derived data
+
+This file does not own:
+
+- transport contracts
+- module placement
+- runtime trigger scheduling
 
 ## Data Stores
 
@@ -46,6 +61,10 @@ The approved storage model is:
 - `ScrapingJob`
   Represents a persisted long-running scraping or enrichment task with status and progress metadata.
 
+Entity rule:
+
+- do not invent new top-level entities that overlap with existing entity meaning without updating this file
+
 ## Entity Relationship Diagram
 
 ```mermaid
@@ -62,14 +81,75 @@ erDiagram
     Company ||--o{ ScrapingJob : targeted_by
 ```
 
-Purpose:
-This diagram shows the major persistent entities and their relationships.
+Required interpretation:
 
-What the reader should understand:
-The architecture centers on resumes, opportunities, and application history, with retrieval-related entities supporting those core flows.
+- `Resume` and `Opportunity` are independent catalogs
+- `MatchResult` and `Application` are different relationship types with different meanings
+- derived entities must not be interpreted as primary business truth automatically
 
-Why the diagram belongs here:
-Entity structure and relationships are data-model concerns.
+## How `Resume` And `Opportunity` Relate
+
+`Resume` and `Opportunity` are not modeled as one directly coupled pair.
+Architecturally, they are two independent business catalogs:
+
+- resumes represent the user-side application material
+- opportunities represent the normalized market-side job targets
+
+They intersect in two different ways:
+
+### `MatchResult` as the analysis relationship
+
+`MatchResult` connects a resume and an opportunity when the system evaluates fit.
+
+This relationship exists for analysis and recommendation purposes.
+It expresses:
+
+- match score
+- reasoning summary
+- recommendation or fit guidance
+
+A single resume may be evaluated against many opportunities.
+A single opportunity may also be evaluated against multiple resume versions.
+
+### `Application` as the action relationship
+
+`Application` connects a resume and an opportunity when the user takes an actual application step.
+
+This relationship exists for business history and user action tracking.
+It expresses:
+
+- which resume version was actually used
+- which opportunity the user acted on
+- which lifecycle state followed
+
+### Why both relationships matter
+
+The architecture intentionally separates:
+
+- analysis
+  “How well could this resume fit this opportunity?”
+
+- action
+  “Which resume was actually used when the user applied?”
+
+This distinction is important because the learning system should not treat theoretical matching and real application history as the same kind of truth.
+
+### Why this matters for insights
+
+The insight system learns from the crossings between resumes, opportunities, and outcomes over time.
+
+That means:
+
+- `MatchResult` helps explain potential fit
+- `Application` records actual user action and outcome
+- insight generation can compare predicted fit with real-world application results
+
+Architecturally, CeeVee is centered around these intersections so the system can improve over time without collapsing analysis, action, and historical truth into one entity.
+
+Implementation rule:
+
+- do not merge `MatchResult` and `Application`
+- do not store real application history only inside match outputs
 
 ## Data Lifecycle Notes
 
@@ -103,6 +183,12 @@ Initial retrieval guidance:
 - created when the user marks an opportunity as applied
 - updated as outcomes change
 - contributes to future insights and similarity retrieval
+
+`Application` is also the primary historical learning source for the insight system because outcome changes provide the strongest real-world feedback signal in the product.
+
+Implementation consequence:
+
+- if an outcome change is missing from `Application`, the learning system has lost its strongest signal
 
 ## Vector Search Responsibilities
 

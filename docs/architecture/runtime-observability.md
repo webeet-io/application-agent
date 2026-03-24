@@ -4,7 +4,22 @@ See also: [index.md](./index.md)
 
 ## Purpose
 
-This document defines the runtime behavior, background processing approach, and operational visibility expectations for CeeVee.
+This document defines runtime semantics, trigger semantics, sync-vs-async rules, and observability requirements.
+
+## Scope
+
+This file owns:
+
+- request-cycle semantics
+- job-execution semantics
+- learning-trigger semantics
+- observability requirements
+
+This file does not own:
+
+- entity meaning
+- module placement
+- transport contract details
 
 ## Runtime Model
 
@@ -16,6 +31,10 @@ The MVP uses:
 
 Inside the backend, work is divided into synchronous request flows and asynchronous job flows.
 Long-running scraping and enrichment must rely on persisted job state rather than implicit in-memory request state alone.
+
+Runtime invariant:
+
+- if work must survive request completion or retry safely, it must be represented as persisted job state
 
 ## Sync Versus Async Policy
 
@@ -39,6 +58,50 @@ Long-running scraping and enrichment must rely on persisted job state rather tha
 Small, bounded scraping tasks may start synchronously and continue asynchronously if runtime or provider limits are exceeded.
 Bounded synchronous work should remain intentionally limited to avoid user-visible timeout behavior.
 
+Implementation rule:
+
+- when in doubt, prefer explicit job state over hidden long request handling
+
+## Insight Trigger Model
+
+The learning and insight system should react to three different trigger classes.
+
+### 1. Primary trigger: `Application` state change
+
+The main trigger for insight generation is a change in application lifecycle state.
+
+Typical examples include transitions such as:
+
+- applied
+- interview
+- rejection
+- no response
+
+Architecturally, this is the strongest learning signal because it converts recommendation history into real outcome data.
+
+### 2. Background trigger: retrospective insight refresh
+
+The runtime should support retrospective reanalysis of historical application data.
+
+This allows the system to:
+
+- discover patterns that are only visible across larger history windows
+- refresh older insights
+- improve future recommendation quality without requiring a direct user-triggered recalculation every time
+
+### 3. Retrieval trigger: new matching flow
+
+When a new opportunity is evaluated, the runtime should retrieve relevant historical cases and existing insights as part of the matching flow.
+
+This trigger does not always create a new `InsightRecord`.
+Instead, it activates the use of accumulated learning inside the current `MatchResult`.
+
+Trigger interpretation rule:
+
+- application-state change creates or updates learning input
+- retrospective refresh reprocesses accumulated history
+- new matching consumes historical learning even when no new insight record is created
+
 ## Runtime Flow
 
 ```mermaid
@@ -52,14 +115,10 @@ flowchart TD
     Worker --> Providers[ATS / LLM providers]
 ```
 
-Purpose:
-This diagram explains how the architecture separates immediate request handling from longer-running jobs.
+Required interpretation:
 
-What the reader should understand:
-The MVP does not assume everything is synchronous, even though it still runs inside one backend service boundary.
-
-Why the diagram belongs here:
-This file owns runtime behavior and operational flow.
+- one backend runtime does not imply one execution mode
+- job execution is part of the runtime model, not an implementation afterthought
 
 ## Reliability Expectations
 
@@ -72,6 +131,11 @@ The architecture should support:
 - stale-data detection for opportunities and career pages
 - idempotent application logging where practical
 
+Implementation rule:
+
+- retries must be bounded and observable
+- long-running work must be resumable or restartable without silent corruption
+
 ## Observability Expectations
 
 The backend should emit:
@@ -81,6 +145,16 @@ The backend should emit:
 - progress states for persisted jobs
 - provider failure context without leaking sensitive document content
 - metrics for scraping success rate, match latency, and retrieval usage
+
+For the learning system, observability should also make it possible to distinguish:
+
+- whether an insight update was triggered by application-state change
+- whether it was triggered by retrospective refresh
+- whether historical retrieval influenced a current match operation
+
+Implementation consequence:
+
+- logs and metrics should let later agents explain why an insight or match changed
 
 ## Security And Privacy-Relevant Runtime Constraints
 

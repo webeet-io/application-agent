@@ -4,81 +4,62 @@ See also: [index.md](./index.md)
 
 ## Purpose
 
-This document defines the approved architecture direction for the CeeVee MVP and its immediate scaling path.
+This document defines the global architecture decisions that all implementation work must follow.
 
-## Architectural Summary
+## Scope
 
-CeeVee is implemented as a TypeScript monorepo with a separated frontend and backend runtime:
+This file owns:
+
+- runtime-shape decisions
+- architecture invariants
+- MVP architectural scope
+- non-goals and deliberate deferrals
+
+This file does not own:
+
+- detailed module placement
+- entry-point contracts
+- entity lifecycle details
+- runtime trigger details
+
+## Approved Runtime Shape
+
+CeeVee is a TypeScript monorepo with a separated frontend runtime and backend runtime.
+
+Required runtime split:
 
 - `apps/web` hosts the Next.js App Router frontend
-- `apps/api` hosts a separate Node.js backend service
-- `packages/shared` hosts shared types and cross-runtime contracts
-- `packages/domain` hosts pure domain models, use cases, and port definitions
+- `apps/api` hosts the Node.js backend service
+- `packages/domain` hosts pure domain models, use cases, and ports
+- `packages/shared` hosts shared transport contracts and validation schemas
 
 The architecture follows a hexagonal pattern. Core business logic depends only on ports. External systems such as Supabase, LLM providers, ATS career pages, and MCP transport are isolated behind adapters.
 
-## Chosen Runtime Shape
+## Global Invariants
 
-### Approved direction
+Implementation LLMs must preserve all of the following:
 
-The project uses a separate backend service instead of Next.js API routes as the primary backend runtime.
+1. Domain purity
+   Domain logic must not import HTTP frameworks, database drivers, scraper libraries, or LLM SDKs directly.
 
-### Why this direction fits this project
+2. Adapter-first external access
+   Discovery, scraping, retrieval, matching, storage, and generation must be accessed through ports and adapters.
 
-This project combines:
+3. Shared capability layer
+   HTTP and MCP must call the same backend capability layer instead of duplicating business logic.
 
-- frontend user flows
-- MCP tool exposure
-- external scraping
-- AI-assisted matching
-- retrieval and embeddings
-- hybrid synchronous and asynchronous processing
+4. Explicit user context
+   Backend-facing work must execute inside an explicit user-context boundary, even in single-user mode.
 
-These concerns are operationally easier to maintain in a dedicated backend runtime than inside frontend-coupled API routes.
+5. Bounded execution
+   Unbounded discovery, scraping, and enrichment must not be modeled as ordinary request-cycle work.
 
-### Best-practice baseline
-
-For systems combining orchestration, ingestion, retrieval, and external integrations, a clear split between UI runtime and backend runtime is the preferred baseline.
-
-### Adaptation for this project
-
-The project is still MVP-focused, so the backend remains a single service rather than a microservice fleet. This preserves clarity without introducing premature deployment complexity.
-
-## Architectural Principles
-
-### 1. Hexagonal boundaries
-
-Domain logic must not import database drivers, HTTP frameworks, scraper libraries, or LLM SDKs directly.
-
-### 2. Monorepo with explicit ownership
-
-Frontend, backend, and shared domain contracts live in one repository, but each area has clear ownership and runtime boundaries.
-
-### 3. Adapter-first integrations
-
-Career-page scraping, company discovery, resume parsing, matching, and RAG retrieval are modeled behind explicit ports so providers can change later.
-
-### 4. Hybrid execution
-
-Short-lived discovery and matching flows may run synchronously. Larger scraping and enrichment workflows must run asynchronously through a job model.
-
-### 5. Retrieval as product infrastructure
-
-Embeddings and semantic retrieval are part of the product architecture, not an optional later add-on.
-
-### 6. Stable user context at the backend boundary
-
-Even in the single-user MVP, backend-facing and MCP-facing flows must execute inside an explicit user context boundary.
-
-This user context may initially resolve to a local single-user identity, but the architecture must not assume anonymous global access as the long-term contract.
-
-### 7. Operationally bounded scraping
-
-Discovery and scraping flows must be architected around bounded work units, progress visibility, and resumable execution rather than assuming that broad external scraping can finish inside a single request cycle.
+6. Retrieval is additive
+   Retrieval augments ranking and reasoning. It does not replace operational truth.
 
 ## MVP Scope In Architecture Terms
 
-The MVP architecture must support:
+The architecture must support all of the following in MVP form:
 
 - a single-user runtime model with an explicit backend user context boundary
 - multiple resume versions
@@ -91,11 +72,19 @@ The MVP architecture must support:
 - cover-letter scaffolding support
 - learning from prior applications via retrieval
 
-The MVP must also preserve forward-compatible architectural space for:
+The architecture must also preserve forward-compatible space for:
 
 - later Supabase Auth integration without breaking domain contracts
 - job progress reporting for long-running scraping work
 - configurable retrieval parameters
+
+## Required Interpretation For Downstream LLMs
+
+- “single-user MVP” does not mean “no identity boundary”
+- “separate backend service” does not mean “microservices”
+- “retrieval” does not mean “replace relational truth”
+- “matching” does not mean “text comparison only”
+- “MCP support” does not authorize a separate business-logic stack
 
 ## Primary Runtime Topology
 
@@ -110,37 +99,34 @@ flowchart LR
     Api --> MCP[MCP Tool Surface]
 ```
 
-Purpose:
-This diagram shows the top-level runtime split and the primary external dependencies.
+Required interpretation:
 
-What the reader should understand:
-The frontend is separated from the backend runtime, and the backend owns all integration-heavy behavior.
+- `apps/web` is the user-facing runtime only
+- `apps/api` owns integration-heavy and orchestration-heavy work
+- external dependencies terminate at the backend runtime, not at the frontend runtime
 
-Why the diagram belongs here:
-This file defines the overall architectural direction and runtime shape.
+## Deliberate Tradeoffs
 
-## Main Tradeoffs
+Chosen:
 
-### Chosen
+- separate backend service
+- one deployable backend runtime for MVP scope
+- explicit async capability without full service decomposition
 
-- Separate backend service
-- One deployable backend runtime for the MVP
-- Explicit async capability without requiring a large event-driven platform
-
-### Deliberately not chosen yet
+Not chosen yet:
 
 - frontend-only API orchestration
 - microservice decomposition
 - multi-user tenant isolation
 - auto-apply automation
 
-## Scaling Path
+## Scaling Direction
 
-The immediate next-stage scaling path is:
+Preferred next-stage scaling path:
 
 1. keep the monorepo structure stable
 2. keep the domain and ports reusable
 3. split long-running jobs into dedicated workers only when runtime pressure justifies it
 4. preserve MCP compatibility at the backend boundary
 
-The architecture is therefore optimized for MVP delivery with a low-friction path to stronger operational separation later.
+Downstream LLMs must not introduce architectural changes that contradict this scaling direction without updating the owning architecture files first.

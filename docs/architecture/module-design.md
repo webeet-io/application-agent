@@ -4,7 +4,21 @@ See also: [index.md](./index.md)
 
 ## Purpose
 
-This document defines the internal module structure and ownership boundaries of the CeeVee architecture.
+This document defines module placement, layering, and ownership rules for implementation.
+
+## Scope
+
+This file owns:
+
+- repository-area responsibilities
+- layer ordering
+- ownership boundaries between domain, application, transport, and adapters
+
+This file does not own:
+
+- detailed entity semantics
+- entry-point contracts
+- runtime trigger behavior
 
 ## Monorepo Shape
 
@@ -21,6 +35,11 @@ The approved repository shape is:
 
 - `packages/shared`
   Shared transport DTOs, validation schemas, and stable cross-runtime types
+
+Placement rule:
+
+- new code must be placed according to these repository areas
+- do not create new top-level architecture areas without updating this file
 
 ## Internal Architectural Layers
 
@@ -40,14 +59,21 @@ flowchart TD
     ADAPTERS --> PORTS
 ```
 
-Purpose:
-This diagram shows the internal layering from the web interface to the domain core and infrastructure adapters.
+Required interpretation:
 
-What the reader should understand:
-The domain defines required capabilities through ports, and adapters satisfy those ports without leaking infrastructure concerns into the core.
+- dependency direction points toward the domain and its ports
+- adapters satisfy ports; ports do not depend on adapters
+- transport logic may call application services; application services may call domain and ports
 
-Why the diagram belongs here:
-Layering and module ownership are module-design concerns.
+## Layer Rules
+
+Implementation LLMs must preserve all of the following:
+
+- `apps/web` must not own backend business logic
+- transport code in `apps/api` must not become the domain layer
+- `packages/domain` must remain transport-agnostic and provider-agnostic
+- `packages/shared` must not become a second domain layer
+- infrastructure adapters must not define product truth
 
 ## Core Domain Areas
 
@@ -77,7 +103,7 @@ The backend domain is split into these major areas:
 - `cover-letter`
   Scaffolding generation based on company and job context plus relevant resume chunks
 
-## Port Definitions
+## Domain Areas
 
 The domain owns ports such as:
 
@@ -94,8 +120,16 @@ The domain owns ports such as:
 - `CoverLetterPort`
 - `UserContextPort`
 
-Each port must define purpose, input shape, output shape, and failure behavior.
-The approved architecture-level definitions for the external-facing ports are documented in [port-contracts.md](./port-contracts.md).
+Implementation rule:
+
+- place domain logic in the smallest relevant domain area above
+- do not merge unrelated concerns into a generic “services” area
+
+## Port Definitions
+
+The architecture-level definitions for the external-facing ports are documented in [port-contracts.md](./port-contracts.md).
+
+Implementation LLMs must treat those contracts as authoritative and must not redefine them inside transport or adapter code.
 
 ## Adapter Categories
 
@@ -138,6 +172,12 @@ They are not responsible for:
 - direct SQL inside core use cases
 - provider-specific prompt or scraper details
 
+Implementation rule:
+
+- orchestration belongs here
+- durable business meaning does not belong in handlers
+- provider-specific logic does not belong here if it can be isolated behind adapters
+
 ## Shared Contract Rule
 
 `packages/domain` owns business meaning and port contracts.
@@ -149,6 +189,12 @@ They are not responsible for:
 - MCP tool handlers
 
 The architecture must keep domain models and transport validation schemas related but not interchangeable.
+
+Required interpretation:
+
+- domain models express business meaning
+- shared schemas express transport contracts
+- do not collapse both into one generic schema layer
 
 ## Scraping Robustness Rule
 
@@ -176,6 +222,11 @@ The frontend must not:
 - scrape external sites directly
 - own retrieval logic
 - construct provider-specific integration behavior
+
+Implementation rule:
+
+- frontend may render recommendations
+- frontend must not compute recommendation truth
 
 ## Future Split Readiness
 

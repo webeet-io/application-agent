@@ -4,9 +4,13 @@ See also: [index.md](./index.md)
 
 ## Purpose
 
-This document defines the system boundaries that structure the CeeVee architecture.
+This document defines the mandatory cross-boundary constraints of the architecture.
 
-In this project, architecture is not only a question of components and modules. It is also a question of where responsibilities stop, where data changes shape, and where behavior must not leak across a boundary.
+Primary use:
+
+- prevent incorrect layer crossing
+- prevent truth-model leakage
+- prevent transport, AI, retrieval, and provider semantics from contaminating the wrong layer
 
 ## Boundary Rule
 
@@ -16,6 +20,10 @@ Every important boundary in this architecture should make four things clear:
 - why the boundary exists
 - what responsibility must not leak across it
 - what risk appears when the boundary becomes unclear
+
+Implementation rule:
+
+- when code crosses one of these boundaries incorrectly, the code is architecturally wrong even if it appears to work
 
 ## Boundary Overview
 
@@ -43,14 +51,10 @@ flowchart TD
     Business --> Derived
 ```
 
-Purpose:
-This diagram highlights the major responsibility and model boundaries in the architecture.
+Required interpretation:
 
-What the reader should understand:
-The architecture is stabilized not only by modules, but by explicit boundary lines between runtime areas, data shapes, and responsibility zones.
-
-Why the diagram belongs here:
-This file is the authoritative place for system-boundary definitions.
+- each arrow implies a handoff boundary, not permission to merge concerns
+- downstream LLMs must preserve the separation intent of each boundary below
 
 ## `Web App` vs `Application Core`
 
@@ -75,6 +79,10 @@ The user-facing interface must remain replaceable and lightweight compared to th
 
 The UI becomes a hidden business runtime and the backend loses authority over the product logic.
 
+Implementation consequence:
+
+- do not place recommendation truth, scraping, or retrieval orchestration in frontend code
+
 ## `HTTP` and `MCP` Entry Points vs Shared Capability Layer
 
 ### Boundary
@@ -95,6 +103,10 @@ The same product capabilities must remain reusable across web usage and agent-dr
 ### Risk if unclear
 
 The product develops two inconsistent backends that drift in behavior over time.
+
+Implementation consequence:
+
+- implement transport adapters separately only at the edge; keep business semantics shared
 
 ## `Request Cycle` vs `Job Execution`
 
@@ -117,6 +129,10 @@ The system interacts with slow, unstable, or large-scale external scraping and e
 
 The product times out, progress becomes invisible, and operational failures become hard to recover from.
 
+Implementation consequence:
+
+- unbounded scraping and enrichment must be job-backed, progress-capable, and recoverable
+
 ## `External ATS Shapes` vs `Internal Opportunity Model`
 
 ### Boundary
@@ -138,6 +154,10 @@ The product needs one consistent job representation regardless of provider famil
 
 Provider changes break unrelated business behavior and make the product model unstable.
 
+Implementation consequence:
+
+- normalize provider payloads before core business use
+
 ## `AI and LLM Reasoning` vs `Domain Truth`
 
 ### Boundary
@@ -157,6 +177,10 @@ LLM output is probabilistic, while the product requires stable business entities
 ### Risk if unclear
 
 The system becomes difficult to reason about, hard to test, and vulnerable to inconsistent behavior.
+
+Implementation consequence:
+
+- generated output may inform decisions but must not silently redefine domain state
 
 ## `Relational Source of Truth` vs `Vector Retrieval Layer`
 
@@ -179,6 +203,10 @@ Retrieval improves ranking and semantic recall, but it is not a reliable replace
 
 The product loses data integrity and retrieval becomes falsely authoritative.
 
+Implementation consequence:
+
+- retrieval output is supporting context; relational state remains authoritative
+
 ## `Persistent Business Data` vs `Derived and Generated Data`
 
 ### Boundary
@@ -199,6 +227,10 @@ The product must distinguish between facts, decisions, and generated assistance.
 ### Risk if unclear
 
 Users and developers lose clarity about what is factual, what is inferred, and what may be regenerated.
+
+Implementation consequence:
+
+- persist derived data with derived semantics; do not overwrite business truth with generated interpretation
 
 ## Boundary Evolution Rule
 

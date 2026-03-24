@@ -4,7 +4,22 @@ See also: [index.md](./index.md)
 
 ## Purpose
 
-This document defines the primary architecture-level interfaces of CeeVee.
+This document defines entry-point semantics and interface rules for downstream implementation.
+
+## Scope
+
+This file owns:
+
+- web-to-backend entry semantics
+- MCP-to-backend entry semantics
+- shared capability-layer rules
+- interface-level failure classes
+
+This file does not own:
+
+- internal module placement
+- entity lifecycle semantics
+- adapter implementation details
 
 ## Interface Categories
 
@@ -28,6 +43,12 @@ The web app communicates only with the backend service. The backend is the autho
 The frontend contract should prefer task-oriented endpoints over low-level provider-shaped APIs.
 Every backend-facing request must execute within an explicit user context, even in the single-user MVP.
 
+Implementation rules:
+
+- expose task-oriented endpoints, not provider-shaped passthrough endpoints
+- do not expose raw ATS or provider payloads as the primary frontend contract
+- do not let frontend-specific concerns redefine backend capability semantics
+
 ## MCP Tool Interface
 
 The backend exposes a stable MCP tool surface for agent-driven usage.
@@ -50,6 +71,12 @@ Initial tools:
 - `get_application_insights()`
   Returns retrieval-backed patterns from prior applications.
 
+Implementation rules:
+
+- MCP tool names are part of a stable capability surface
+- MCP handlers must call the same capability layer as HTTP handlers
+- do not implement MCP-only business logic that diverges from HTTP behavior unless architecture docs explicitly authorize it
+
 ## Interface Flow
 
 ```mermaid
@@ -66,25 +93,13 @@ sequenceDiagram
     Backend->>MCP: Expose same capability family as tools
 ```
 
-Purpose:
-This diagram shows how the same backend capability layer serves both the web app and MCP consumers.
+Required interpretation:
 
-What the reader should understand:
-The MCP surface is not a separate business logic stack. It is another interface into the same backend capability set.
-
-Why the diagram belongs here:
-This file owns architecture-level interface boundaries and interface consumers.
+- Web and MCP are transport variants over one capability layer
+- transport-specific validation is allowed
+- transport-specific business semantics are not allowed unless explicitly documented
 
 ## Port Contract Expectations
-
-Every domain port should specify:
-
-- purpose
-- request and response shape
-- validation expectations
-- failure modes
-- ownership
-- compatibility expectations
 
 The architecture-level definitions of the external-facing ports are maintained in [port-contracts.md](./port-contracts.md).
 
@@ -95,6 +110,11 @@ Transport-facing validation schemas should be defined once in shared contract de
 - frontend form validation where appropriate
 
 This keeps Web and MCP interfaces aligned while preserving domain isolation.
+
+Implementation rule:
+
+- if a field or contract belongs to HTTP and MCP, define it once in shared transport contracts
+- do not duplicate incompatible request shapes for the same capability without explicit architecture approval
 
 ## Failure Behavior
 
@@ -113,6 +133,12 @@ For long-running scraping or enrichment operations, the interface layer should p
 - accepted-job responses
 - progress polling or status retrieval
 - stable completion and failure states
+
+Do not infer:
+
+- that every backend capability is synchronous
+- that a frontend request must wait for full scraping completion
+- that provider-specific error payloads are acceptable public contracts
 
 ## Evolution Expectations
 

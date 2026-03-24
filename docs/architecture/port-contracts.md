@@ -6,6 +6,23 @@ See also: [index.md](./index.md)
 
 This document defines the architectural port contracts of CeeVee.
 
+## Scope
+
+This file owns:
+
+- external dependency capability boundaries
+- port-level responsibility definitions
+- high-level input and output expectations
+- high-level failure classes
+- evolution constraints for external-facing ports
+
+This file does not own:
+
+- concrete TypeScript signatures
+- DTO field layouts
+- adapter class structures
+- framework-specific error mapping
+
 In this architecture, a port is not an implementation detail. A port is a boundary contract between the domain-centered application core and a class of external dependencies.
 
 This document defines only the architectural meaning of those ports:
@@ -28,6 +45,10 @@ They ensure that:
 - transport concerns do not leak into domain decisions
 - application services orchestrate business capabilities through stable contracts
 
+Implementation rule:
+
+- if code directly couples domain or application meaning to provider-specific behavior that should be hidden behind one of these ports, that code violates the architecture
+
 ## Contract Principles
 
 Every architectural port contract should define:
@@ -40,6 +61,12 @@ Every architectural port contract should define:
 - evolution rule
 
 At this architecture level, ports describe capability boundaries, not method signatures.
+
+Required interpretation for downstream LLMs:
+
+- a port is an architectural contract first, not a convenience interface
+- adapters may change; port meaning must remain stable
+- transport handlers must not redefine port meaning
 
 ## Port Categories
 
@@ -65,11 +92,11 @@ flowchart TD
 Purpose:
 This diagram groups the architectural ports by the kind of external boundary they protect.
 
-What the reader should understand:
-Ports are organized by business responsibility and boundary type, not by technical adapter classes.
+Required interpretation:
 
-Why the diagram belongs here:
-This file defines the architectural meaning of the port landscape.
+- application services depend on ports, not concrete providers
+- providers and infrastructure concerns terminate behind adapters
+- one port may have multiple adapter implementations over time without changing domain meaning
 
 ## Identity And Access Boundary
 
@@ -101,6 +128,10 @@ The core expects a stable user context suitable for scoping work, regardless of 
 
 This port must remain stable when the project evolves from a single-user MVP to explicit authentication and authorization.
 
+Implementation consequence:
+
+- do not encode single-user shortcuts directly into domain use cases as permanent business assumptions
+
 ## Discovery And Acquisition Boundary
 
 ### `CompanyDiscoveryPort`
@@ -131,6 +162,11 @@ The core expects search intent in business terms and receives candidate companie
 
 The contract must remain stable if discovery shifts from LLM-first to other provider or rules-based strategies.
 
+Do not infer:
+
+- that company discovery is permanently LLM-only
+- that provider-specific prompt behavior belongs in domain logic
+
 ### `CareerPageScraperPort`
 
 #### Business purpose
@@ -160,6 +196,10 @@ The core expects externally hosted career targets to be processed and turned int
 
 The contract must stay compatible across synchronous bounded work and asynchronous job-based acquisition flows.
 
+Implementation consequence:
+
+- scraping execution mode may change without changing the business meaning of the port
+
 ### `AtsDetectorPort`
 
 #### Business purpose
@@ -188,6 +228,10 @@ The core expects a stable provider classification or an explicit unknown result.
 
 The contract must allow additional ATS families without changing consuming business use cases.
 
+Implementation consequence:
+
+- ATS-family expansion should extend adapters, not rewrite consuming use cases
+
 ### `JobNormalizationPort`
 
 #### Business purpose
@@ -215,6 +259,10 @@ The core expects opportunity information in the internal business shape, indepen
 #### Evolution rule
 
 The internal opportunity model must remain more stable than any single provider’s data shape.
+
+Implementation consequence:
+
+- normalization must happen before core business workflows consume opportunity data
 
 ## Persistence Boundary
 
@@ -246,6 +294,10 @@ The core expects stable business access to resumes, versions, and retrieval-rele
 
 The contract must stay stable even if resume persistence changes across storage backends or metadata layouts.
 
+Implementation consequence:
+
+- storage migrations must not force a rewrite of resume-related use cases
+
 ### `OpportunityRepositoryPort`
 
 #### Business purpose
@@ -274,6 +326,10 @@ The core expects stable access to opportunity-oriented business records and thei
 
 The contract must stay stable as opportunity freshness, deduplication, and lifecycle rules become more sophisticated.
 
+Implementation consequence:
+
+- richer persistence behavior must preserve stable business access semantics
+
 ### `ApplicationRepositoryPort`
 
 #### Business purpose
@@ -301,6 +357,10 @@ The core expects stable access to application events, outcomes, and historically
 #### Evolution rule
 
 The contract must remain stable as the learning and insight features place richer demands on application history.
+
+Implementation consequence:
+
+- the repository remains the persistence boundary rather than the analytics layer
 
 ## Retrieval And Intelligence Boundary
 
@@ -332,6 +392,11 @@ The core expects text-derived representations usable by retrieval workflows with
 
 The contract must remain stable across provider and model changes.
 
+Do not infer:
+
+- that embedding-provider choice is architecture-level truth
+- that embeddings have independent business meaning without the source records they support
+
 ### `RetrievalPort`
 
 #### Business purpose
@@ -359,6 +424,10 @@ The core expects relevant business context returned in a stable ranked form, reg
 #### Evolution rule
 
 The contract must support changing retrieval parameters, ranking strategies, and future reranking without changing business callers.
+
+Implementation consequence:
+
+- retrieval tuning belongs behind the port boundary
 
 ## Generation And Recommendation Boundary
 
@@ -390,6 +459,10 @@ The core expects a stable fit assessment, explanation, and recommendation result
 
 The contract must remain stable even if the internal scoring strategy becomes more retrieval-heavy, model-assisted, or rules-enhanced.
 
+Implementation consequence:
+
+- callers may rely on stable fit-assessment semantics, not on the internal scoring method
+
 ### `CoverLetterPort`
 
 #### Business purpose
@@ -418,6 +491,10 @@ The core expects structured support material suitable for later applicant refine
 
 The contract must remain stable as the product evolves from bullet-point scaffolding toward richer assistance formats.
 
+Implementation consequence:
+
+- generation improvements must preserve the product’s current business contract of support material rather than silently changing output semantics
+
 ## Boundary Rule
 
 This document intentionally stops at the architectural boundary level.
@@ -432,3 +509,9 @@ The following belong outside this file:
 - framework-specific handler design
 
 Those concerns should be specified later in backend documentation while remaining consistent with the architectural contracts defined here.
+
+Execution rule for downstream LLMs:
+
+- implement backend ports according to the architectural meaning defined here
+- do not treat this file as a source of field-level transport schemas
+- if a port needs more implementation detail, add that detail to backend documentation without changing the architectural meaning here unless the architecture itself changes
