@@ -28,8 +28,7 @@ CeeVee is a smart job opportunity agent. You describe what you're looking for in
 - Resume upload and storage (one user, multiple versions supported)
 - Company discovery: free-form natural language prompt → LLM-generated list of companies
 - Career page scraping: detect ATS provider (Greenhouse, Lever, Workday, Ashby) and extract job listings in a normalized format
-- Match scoring: % match per job per resume, with reasoning
-- Opportunity feed: ranked list of matched jobs
+- Opportunity feed: ranked list of matched jobs (% match per job per resume, with reasoning)
 - Application tracker: mark jobs as applied, record outcome
 - A Skill Section where a user can mention all of their skills and the Agent can update the resume with what is relevant for a specific application
 
