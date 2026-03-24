@@ -1,5 +1,11 @@
 # CeeVee — Vision Document
 
+## How to Use This Document
+
+This file describes the product vision and intended direction of the project.
+
+It is not the implementation guide for contributors or coding agents. For actual architectural rules and coding guidance, see [ARCHITECTURE.md](/Users/shenmay/Projects_/Webeet-io/application-agent/ARCHITECTURE.md).
+
 ## What is CeeVee?
 
 CeeVee is a smart job opportunity agent. You describe what you're looking for in plain language — the kind of company, the location, the industry focus, your priorities. It finds those companies, checks their career pages, and surfaces the most relevant open roles matched against your resume. Over time, it learns from your application history.
