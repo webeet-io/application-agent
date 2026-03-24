@@ -28,26 +28,29 @@ CeeVee is a smart job opportunity agent. You describe what you're looking for in
 - Resume upload and storage (one user, multiple versions supported)
 - Company discovery: free-form natural language prompt → LLM-generated list of companies
 - Career page scraping: detect ATS provider (Greenhouse, Lever, Workday, Ashby) and extract job listings in a normalized format
-- Opportunity feed: ranked list of matched jobs (% match per job per resume, with reasoning)
+- Match scoring: % match per job per resume, with reasoning
+- Opportunity feed: ranked list of matched jobs
 - Application Assistant (aka tracker):
-   - TL;DR - instead of a "kanban-style" dashboard, a tracker that updates automatically by conversing with the LLM.
-   - Instead of a 2020 style dashboard 🤢, an "tracker" page with cards that reflect the "todo" of your applications (log how an interview went, update the LLM assistant on the date of the next step...)
-   - This can go as far as being a "mentor" (i.g., "didn't they tell you why they rejected you? Did you ask? You should always ask. If you do and get some insight, come back and let me know! I would love to hear")
-- A Skill Section where a user can mention all of their skills and the Agent can update the resume with what is relevant for a specific application
-
+   - Instead of a kanban-style dashboard, a tracker that updates automatically by conversing with the LLM
+   - Cards reflect the "todo" of your applications (log how an interview went, update the LLM on the next step date...)
+   - Can evolve into a mentor: "didn't they tell you why they rejected you? Did you ask? You should always ask."
+- Skill Section: user lists all their skills; the agent updates the resume with what's relevant for each application
+- Skill gap learning paths: analyze recurring skill gaps across applications and generate prioritized learning plans — not just a list of missing skills, but a structured path covering what to learn, in what order, and when a skill is ready to add to the resume
 
 ### Should Have
 - Resume recommendation: which version to send + what to tweak for a specific role
-- Learning system: analyze past applications using RAG, surface patterns
-- Cover letter builder (scrape what the company does, what the core values are, and what can actually be of interest for the applicants) - v0 does not have to be the full cover letter, but bullet points of the important parts (scaffolding). 
+- Application pattern insights: analyze past applications using RAG, surface patterns (what's working, what's not)
+- Cover letter scaffolding: scrape company values and role context; generate bullet points of key talking points (not a full cover letter)
+- Direct outreach: find contact emails for key people at target companies (VP Eng, team leads) via Apollo or equivalent, validate the address, and generate a personalized cold email based on the role and user's resume — the user sends it themselves, bypassing the standard application funnel entirely
+
+### V2
+- Voice interface: interact with the agent by speaking, not just typing
 
 ---
 
 ## Insights
 
-- By comparing the CV to relevant applications, the Agent creates a backlog of relevant skills to learn next (i.g., if the agent sees the Docker is on 90% of application but not on the CV, it will prioritize learning it).
-
----
+- By comparing the CV to relevant applications, the Agent creates a backlog of relevant skills to learn next (e.g., if Docker appears in 90% of applications but not on the CV, it gets prioritized).
 
 ### Out of Scope (for now)
 - Auto-apply
