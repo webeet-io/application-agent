@@ -29,7 +29,10 @@ CeeVee is a smart job opportunity agent. You describe what you're looking for in
 - Company discovery: free-form natural language prompt → LLM-generated list of companies
 - Career page scraping: detect ATS provider (Greenhouse, Lever, Workday, Ashby) and extract job listings in a normalized format
 - Opportunity feed: ranked list of matched jobs (% match per job per resume, with reasoning)
-- Application tracker: mark jobs as applied, record outcome
+- Application Assistant (aka tracker):
+   - TL;DR - instead of a "kanban-style" dashboard, a tracker that updates automatically by conversing with the LLM.
+   - Instead of a 2020 style dashboard 🤢, an "tracker" page with cards that reflect the "todo" of your applications (log how an interview went, update the LLM assistant on the date of the next step...)
+   - This can go as far as being a "mentor" (i.g., "didn't they tell you why they rejected you? Did you ask? You should always ask. If you do and get some insight, come back and let me know! I would love to hear")
 - A Skill Section where a user can mention all of their skills and the Agent can update the resume with what is relevant for a specific application
 
 
