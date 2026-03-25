@@ -10,4 +10,7 @@ export interface IApplicationRepositoryPort {
   save(application: Application): Promise<AttemptResult<ApplicationRepositoryError, void>>
   updateStatus(id: ApplicationId, status: ApplicationStatus): Promise<AttemptResult<ApplicationRepositoryError, void>>
   delete(id: ApplicationId): Promise<AttemptResult<ApplicationRepositoryError, void>>
+  
+  // ADD THIS LINE:
+  findSimilar(embedding: number[], limit: number): Promise<AttemptResult<ApplicationRepositoryError, Application[]>>
 }
