@@ -12,12 +12,6 @@ const starterMessages: ChatMessage[] = [
   },
 ]
 
-const suggestedPrompts = [
-  'Summarize the strongest profile for a senior product role.',
-  'Turn these notes into a concise candidate pitch.',
-  'What follow-up questions should I ask in the next interview?',
-]
-
 function createMessage(role: ChatMessage['role'], content: string): ChatMessage {
   return {
     id: `${role}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -363,10 +357,6 @@ export function ChatInterface() {
     }
   }
 
-  function applyPrompt(prompt: string) {
-    setInput(prompt)
-  }
-
   async function toggleRecording() {
     if (isSending) return
     if (isRecording) {
@@ -449,32 +439,9 @@ export function ChatInterface() {
         <div className="chat-window__header">
           <div className="chat-window__identity">
             <h2 className="chat-window__title">LLM chat interface</h2>
-            <p className="chat-window__subtitle">
-              Ask one focused question, refine with follow-ups, and open sources directly from the
-              thread.
-            </p>
           </div>
           <p className="chat-window__eyebrow">Conversation Module</p>
         </div>
-
-        <section className="chat-window__suggestions-panel" aria-label="Suggested prompts">
-          <div className="chat-window__section-head">
-            <span className="chat-window__section-label">Prompt starters</span>
-            <span className="chat-window__section-note">One click fills the composer</span>
-          </div>
-          <div className="chat-window__suggestions">
-            {suggestedPrompts.map((prompt) => (
-              <button
-                key={prompt}
-                type="button"
-                className="chat-window__suggestion"
-                onClick={() => applyPrompt(prompt)}
-              >
-                {prompt}
-              </button>
-            ))}
-          </div>
-        </section>
 
         <div className="chat-window__messages-frame">
           <div className="chat-window__section-head">

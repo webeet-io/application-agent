@@ -76,7 +76,7 @@ textarea {
 .chat-bubble__speaker {
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  font-size: 0.72rem;
+  font-size: 0.5rem;
   font-weight: 700;
 }
 
@@ -123,14 +123,6 @@ textarea {
   line-height: 1;
 }
 
-.chat-window__subtitle {
-  margin: 10px 0 0;
-  max-width: 58ch;
-  color: var(--text-soft);
-  line-height: 1.55;
-}
-
-.chat-window__suggestions-panel,
 .chat-window__messages-frame {
   display: grid;
   gap: 12px;
@@ -162,37 +154,6 @@ textarea {
   color: var(--text-soft);
 }
 
-.chat-window__suggestions {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.chat-window__suggestion {
-  border: 1px solid rgba(58, 44, 33, 0.1);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.76);
-  color: var(--text-main);
-  padding: 12px 13px;
-  min-height: 72px;
-  text-align: left;
-  line-height: 1.35;
-  cursor: pointer;
-  box-shadow: var(--shadow-md);
-  transition:
-    transform 120ms ease,
-    border-color 120ms ease,
-    background 120ms ease,
-    box-shadow 120ms ease;
-}
-
-.chat-window__suggestion:hover {
-  transform: translateY(-1px);
-  border-color: rgba(201, 109, 66, 0.38);
-  background: rgba(255, 247, 241, 0.95);
-  box-shadow: 0 16px 30px rgba(65, 46, 32, 0.1);
-}
-
 .chat-window__messages {
   max-height: min(56vh, 640px);
   overflow-y: auto;
@@ -212,8 +173,14 @@ textarea {
   box-shadow: var(--shadow-md);
 }
 
+.chat-bubble__speaker {
+  display: block;
+  line-height: 1;
+  opacity: 0.72;
+}
+
 .chat-bubble p {
-  margin: 6px 0 0;
+  margin: 1.5px 0 0;
   white-space: pre-wrap;
   line-height: 1.55;
 }
@@ -576,10 +543,6 @@ textarea {
   .chat-composer__topline {
     align-items: flex-start;
     flex-direction: column;
-  }
-
-  .chat-window__suggestions {
-    grid-template-columns: 1fr;
   }
 
   .chat-bubble {
