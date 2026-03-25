@@ -73,12 +73,6 @@ export function ChatInterface() {
         </div>
 
         <div className="chat-window__messages-frame">
-          <div className="chat-window__section-head">
-            <span className="chat-window__section-label">Thread</span>
-            <span className="chat-window__section-note">
-              Links and sources stay attached to each answer
-            </span>
-          </div>
           <div className="chat-window__messages" aria-live="polite">
             {messages.map((message) => (
               <article
