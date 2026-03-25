@@ -59,7 +59,7 @@ function renderInlineContent(line: string): ReactNode[] {
         rel="noreferrer"
       >
         {label}
-      </a>
+      </a>,
     )
 
     cursor = start + fullMatch.length
@@ -96,7 +96,7 @@ function renderRawUrls(text: string, offset: number): ReactNode[] {
         rel="noreferrer"
       >
         {trimmedUrl}
-      </a>
+      </a>,
     )
 
     if (trailing) {
@@ -118,11 +118,18 @@ export function ChatInterface() {
   const [input, setInput] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isSending, setIsSending] = useState(false)
-  const bottomRef = useRef<HTMLDivElement>(null)
+  const [messageToRevealId, setMessageToRevealId] = useState<string | null>(null)
+  const messageRefs = useRef<Record<string, HTMLElement | null>>({})
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, isSending])
+    if (!messageToRevealId) return
+
+    const element = messageRefs.current[messageToRevealId]
+    if (!element) return
+
+    element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    setMessageToRevealId(null)
+  }, [messageToRevealId, messages])
 
   async function sendMessage(event?: FormEvent<HTMLFormElement>) {
     event?.preventDefault()
@@ -149,32 +156,34 @@ export function ChatInterface() {
         }),
       })
 
-      const payload = (await response.json().catch(() => null)) as
-        | { reply?: string; error?: string; sources?: ChatMessage['sources'] }
-        | null
+      const payload = (await response.json().catch(() => null)) as {
+        reply?: string
+        error?: string
+        sources?: ChatMessage['sources']
+      } | null
 
       if (!response.ok || !payload?.reply) {
         throw new Error(payload?.error ?? 'The assistant could not respond.')
       }
 
-      setMessages((current) => [
-        ...current,
-        {
-          ...createMessage('assistant', payload.reply!),
-          sources: payload.sources,
-        },
-      ])
+      const assistantMessage = {
+        ...createMessage('assistant', payload.reply!),
+        sources: payload.sources,
+      }
+
+      setMessages((current) => [...current, assistantMessage])
+      setMessageToRevealId(assistantMessage.id)
     } catch (caughtError) {
       const message =
         caughtError instanceof Error ? caughtError.message : 'The assistant could not respond.'
       setError(message)
-      setMessages((current) => [
-        ...current,
-        createMessage(
-          'assistant',
-          'I could not answer right now. Check the server configuration and try again.'
-        ),
-      ])
+      const assistantMessage = createMessage(
+        'assistant',
+        'I could not answer right now. Check the server configuration and try again.',
+      )
+
+      setMessages((current) => [...current, assistantMessage])
+      setMessageToRevealId(assistantMessage.id)
     } finally {
       setIsSending(false)
     }
@@ -188,97 +197,129 @@ export function ChatInterface() {
     <section className="chat-shell">
       <div className="chat-window">
         <div className="chat-window__header">
-          <div>
-            <p className="chat-window__eyebrow">Conversation Module</p>
+          <div className="chat-window__identity">
             <h2 className="chat-window__title">LLM chat interface</h2>
+            <p className="chat-window__subtitle">
+              Ask one focused question, refine with follow-ups, and open sources directly from the
+              thread.
+            </p>
           </div>
-          <div className="chat-window__status">
-            <span className="chat-window__status-dot" />
-            Assistant online
-          </div>
-        </div>
-
-        <div className="chat-window__suggestions" aria-label="Suggested prompts">
-          {suggestedPrompts.map((prompt) => (
-            <button
-              key={prompt}
-              type="button"
-              className="chat-window__suggestion"
-              onClick={() => applyPrompt(prompt)}
-            >
-              {prompt}
-            </button>
-          ))}
-        </div>
-
-        <div className="chat-window__messages" aria-live="polite">
-          {messages.map((message) => (
-            <article
-              key={message.id}
-              className={`chat-bubble chat-bubble--${message.role}`}
-            >
-              <span className="chat-bubble__speaker">
-                {message.role === 'assistant' ? 'LLM' : 'User'}
-              </span>
-              <p>{renderMessageContent(message.content)}</p>
-              {message.role === 'assistant' && message.sources?.length ? (
-                <div className="chat-bubble__sources">
-                  <span className="chat-bubble__sources-label">Sources</span>
-                  <ul className="chat-bubble__sources-list">
-                    {message.sources.map((source) => (
-                      <li key={`${source.url}-${source.title}`}>
-                        <a
-                          className="chat-source-link"
-                          href={source.url}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          <span>{source.title}</span>
-                          <span className="chat-source-link__url">{source.url}</span>
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
-            </article>
-          ))}
-
-          {isSending ? (
-            <div className="chat-bubble chat-bubble--assistant chat-bubble--pending">
-              <span className="chat-bubble__speaker">LLM</span>
-              <div className="chat-typing" aria-label="Assistant is typing">
-                <span />
-                <span />
-                <span />
+          <div className="chat-window__meta">
+            <p className="chat-window__eyebrow">Conversation Module</p>
+            <div className="chat-window__meta-row">
+              <div className="chat-window__badge">Live web answers</div>
+              <div className="chat-window__status">
+                <span className="chat-window__status-dot" />
+                Assistant online
               </div>
             </div>
-          ) : null}
+          </div>
+        </div>
 
-          <div ref={bottomRef} />
+        <section className="chat-window__suggestions-panel" aria-label="Suggested prompts">
+          <div className="chat-window__section-head">
+            <span className="chat-window__section-label">Prompt starters</span>
+            <span className="chat-window__section-note">One click fills the composer</span>
+          </div>
+          <div className="chat-window__suggestions">
+            {suggestedPrompts.map((prompt) => (
+              <button
+                key={prompt}
+                type="button"
+                className="chat-window__suggestion"
+                onClick={() => applyPrompt(prompt)}
+              >
+                {prompt}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <div className="chat-window__messages-frame">
+          <div className="chat-window__section-head">
+            <span className="chat-window__section-label">Thread</span>
+            <span className="chat-window__section-note">
+              Links and sources stay attached to each answer
+            </span>
+          </div>
+          <div className="chat-window__messages" aria-live="polite">
+            {messages.map((message) => (
+              <article
+                key={message.id}
+                ref={(element) => {
+                  messageRefs.current[message.id] = element
+                }}
+                className={`chat-bubble chat-bubble--${message.role}`}
+              >
+                <span className="chat-bubble__speaker">
+                  {message.role === 'assistant' ? 'LLM' : 'User'}
+                </span>
+                <p>{renderMessageContent(message.content)}</p>
+                {message.role === 'assistant' && message.sources?.length ? (
+                  <div className="chat-bubble__sources">
+                    <span className="chat-bubble__sources-label">Sources</span>
+                    <ul className="chat-bubble__sources-list">
+                      {message.sources.map((source) => (
+                        <li key={`${source.url}-${source.title}`}>
+                          <a
+                            className="chat-source-link"
+                            href={source.url}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            <span>{source.title}</span>
+                            <span className="chat-source-link__url">{source.url}</span>
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+              </article>
+            ))}
+
+            {isSending ? (
+              <div className="chat-bubble chat-bubble--assistant chat-bubble--pending">
+                <span className="chat-bubble__speaker">LLM</span>
+                <div className="chat-typing" aria-label="Assistant is typing">
+                  <span />
+                  <span />
+                  <span />
+                </div>
+              </div>
+            ) : null}
+          </div>
         </div>
 
         <form className="chat-composer" onSubmit={sendMessage}>
-          <label className="chat-composer__label" htmlFor="chat-input">
-            Message
-          </label>
-          <textarea
-            id="chat-input"
-            className="chat-composer__input"
-            value={input}
-            onChange={(event) => setInput(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault()
-                void sendMessage()
-              }
-            }}
-            placeholder="Ask the assistant anything relevant to the hiring workflow..."
-            rows={3}
-          />
+          <div className="chat-composer__topline">
+            <label className="chat-composer__label" htmlFor="chat-input">
+              Your message
+            </label>
+            <span className="chat-composer__shortcut">
+              Enter to send, Shift+Enter for a new line
+            </span>
+          </div>
+          <div className="chat-composer__surface">
+            <textarea
+              id="chat-input"
+              className="chat-composer__input"
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                  event.preventDefault()
+                  void sendMessage()
+                }
+              }}
+              placeholder="Ask a specific question, request a summary, or ask for a source-backed web answer..."
+              rows={3}
+            />
+          </div>
           <div className="chat-composer__footer">
             <p className="chat-composer__hint">
-              The assistant is the second participant and replies in a normal dialogue flow.
+              Keep prompts concrete for better answers. Current or factual questions can use web
+              search.
             </p>
             <button
               type="submit"
