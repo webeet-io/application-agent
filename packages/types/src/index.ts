@@ -48,3 +48,105 @@ export interface JobMatch {
   reasoning: string
   suggestedTweaks: string[]
 }
+
+export type RequirementPriority = 'core' | 'supporting' | 'nice_to_have'
+export type MatchQuality = 'direct' | 'transferable' | 'inferable' | 'missing'
+export type EvidenceStrength =
+  | 'explicit_achievement'
+  | 'work_experience'
+  | 'project'
+  | 'skills_section'
+  | 'education'
+  | 'inferred'
+export type ExperienceDepth =
+  | 'theory'
+  | 'small_project'
+  | 'multiple_projects'
+  | 'work_usage'
+  | 'ownership'
+export type SeniorityLevel = 'intern' | 'junior' | 'mid' | 'senior' | 'staff' | 'lead'
+export type SeniorityFit = 'aligned' | 'slightly_below' | 'clearly_below' | 'overqualified'
+export type Learnability = 'fast' | 'moderate' | 'structural'
+export type EvidenceQuality = 'strong' | 'mixed' | 'weak'
+export type OverallMatchLevel = 'strong' | 'promising' | 'stretch' | 'low' | 'blocked'
+
+export interface ResumeSkillEvidence {
+  skill: string
+  aliases?: string[]
+  relatedSkills?: string[]
+  source: 'work_experience' | 'project' | 'achievement' | 'skills_section' | 'education'
+  summary: string
+  strength: EvidenceStrength
+  depth: ExperienceDepth
+  yearsOfExperience?: number
+}
+
+export interface ResumeProfile {
+  resumeId?: ResumeId
+  label?: string
+  targetRoles?: string[]
+  seniority: SeniorityLevel
+  languages: string[]
+  locations?: string[]
+  skillEvidence: ResumeSkillEvidence[]
+}
+
+export interface JobRequirement {
+  id: string
+  skill: string
+  priority: RequirementPriority
+  isKnockout?: boolean
+  alternatives?: string[]
+  relatedSkills?: string[]
+  inferableFromSkills?: string[]
+  minimumDepth?: ExperienceDepth
+  learnability?: Learnability
+}
+
+export interface JobLocationConstraint {
+  mode: 'remote' | 'hybrid' | 'onsite'
+  allowedLocations?: string[]
+}
+
+export interface NormalizedJobPosting {
+  jobId?: JobId
+  title: string
+  requiredLanguages: string[]
+  locationConstraint?: JobLocationConstraint
+  seniority: SeniorityLevel
+  requirements: JobRequirement[]
+}
+
+export interface KnockoutAssessment {
+  blocked: boolean
+  reasons: string[]
+}
+
+export interface RequirementAssessment {
+  requirementId: string
+  skill: string
+  priority: RequirementPriority
+  matchQuality: MatchQuality
+  matchedBy?: string
+  evidenceStrength?: EvidenceStrength
+  experienceDepth?: ExperienceDepth
+  confidence: number
+  reasoning: string
+  learnability?: Learnability
+  isKnockout?: boolean
+}
+
+export interface ResumeJobFitResult {
+  overallScore: number
+  overallMatchLevel: OverallMatchLevel
+  knockout: KnockoutAssessment
+  seniorityFit: SeniorityFit
+  evidenceQuality: EvidenceQuality
+  strengths: string[]
+  criticalGaps: string[]
+  learnableGaps: string[]
+  reasoningSummary: string
+  resumeImprovementSuggestions: string[]
+  recommendedSkillsToLearnNext: string[]
+  requirementAssessments: RequirementAssessment[]
+}
