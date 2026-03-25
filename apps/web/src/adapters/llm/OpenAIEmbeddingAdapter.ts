@@ -18,18 +18,9 @@ export class OpenAIEmbeddingAdapter implements IEmbeddingPort {
         model: 'text-embedding-3-small',
         input: text,
       })
-
-      return {
-        success: true,
-        error: null,
-        value: response.data[0].embedding,
-      }
+      return { success: true, error: null, value: response.data[0].embedding }
     } catch (error: any) {
-      return {
-        success: false,
-        error: { type: 'api_error', message: error.message },
-        value: null,
-      }
+      return { success: false, error: { type: 'api_error', message: error.message }, value: null }
     }
   }
 }
