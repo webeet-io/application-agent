@@ -123,10 +123,10 @@ A port is a TypeScript type or interface that defines what the domain needs, not
 
 Examples:
 
-- `CompanyDiscoveryPort`
-- `CareerPageScraperPort`
-- `MatchEnginePort`
-- `ApplicationRepositoryPort`
+- `ICompanyDiscoveryPort`
+- `ICareerPagePort`
+- `IMatchEnginePort`
+- `IApplicationRepositoryPort`
 
 Rules:
 
@@ -209,6 +209,56 @@ Bad patterns:
 
 This is not a "pure FP" codebase. Pragmatism matters more than ideology.
 
+## Error Handling
+
+This repo uses `AttemptResult<E, T>` — a native TypeScript discriminated union — for explicit error handling. There are no external result-type libraries.
+
+```typescript
+type AttemptResult<E extends Error | null, T> =
+  | { success: true; error: null; value: T }
+  | { success: false; error: E; value: null }
+```
+
+This type lives in `packages/types` and is available to all apps.
+
+### Where to use it
+
+- **Adapters** return `Promise<AttemptResult<E, T>>`. LLM failures, scrape timeouts, and database errors are runtime failures the application layer must handle explicitly.
+- **Use cases** return `Promise<AttemptResult<E, T>>` so that the delivery layer (API routes, MCP tools) can decide on the response without containing business logic.
+- **Domain functions** return plain values and throw on programming errors (wrong input type, violated invariant). Do not use `AttemptResult` in pure domain logic.
+
+```typescript
+// Domain: plain return, no AttemptResult
+function calculateMatchScore(job: Job, resume: Resume): MatchScore { ... }
+
+// Adapter: AttemptResult for runtime I/O failures
+async function scrapeCareerPage(url: string): Promise<AttemptResult<ScraperError, JobListing[]>> { ... }
+
+// Usage pattern
+const result = await scrapeCareerPage(url)
+if (!result.success) return result
+doSomethingWith(result.value)
+```
+
+### Error types
+
+Define errors as discriminated unions close to the port they belong to. Do not use generic `Error` objects for business-level failures.
+
+```typescript
+type ScraperError =
+  | { type: 'timeout'; url: string }
+  | { type: 'ats_not_supported'; ats: string }
+  | { type: 'parse_failure'; reason: string }
+```
+
+### Why not neverthrow
+
+Railway Oriented Programming (ROP) with `.andThen()` chaining looks appealing for pipelines but is the wrong fit here:
+
+- Use cases are short (2–3 steps). `if (!result.success) return result` is more readable at this length.
+- The scraper needs partial success: if 3 of 10 companies fail to scrape, return the 7 that succeeded. ROP models all-or-nothing and does not fit this pattern.
+- `ResultAsync` vs `Result` distinctions in neverthrow are a stumbling block for beginners and produce inconsistent AI-generated code.
+
 ## LLM-Specific Contribution Rules
 
 This section exists specifically for coding agents and human contributors using AI tools.
@@ -241,24 +291,45 @@ LLMs should favor generating:
 - small transformation modules
 - focused tests around domain behavior
 
-## Folder Intent
+## Folder Structure
 
-The exact folder structure may evolve, but the intended responsibility split is:
+```
+apps/web/src/
+  domain/              ← Pure domain types and functions. No I/O, no SDK imports.
+    entities/          ← Plain typed data models. Prefer interfaces over classes.
+    value-objects/     ← Typed value objects (MatchScore, etc.)
 
-- `apps/` for application entry points and delivery layers
-- `packages/types/` for shared domain-safe types
-- domain-oriented modules for business rules
-- infrastructure-oriented modules for adapters and integration code
+  ports/               ← TypeScript interfaces only. No implementation code.
+    outbound/          ← Contracts the application depends on (IMatchEnginePort, etc.)
 
-A good future structure would separate:
+  adapters/            ← Implementations of ports. May be stateful. Return AttemptResult.
+    db/                ← Supabase repository adapters
+    llm/               ← LLM adapters (OpenAI, etc.)
+    career-pages/      ← Career page adapters (scraping + ATS API calls)
+    embedding/         ← Embedding adapters
 
-- domain
-- ports
-- adapters
-- transport or delivery
-- shared types
+  application/         ← Use cases. Orchestrates domain + ports. One file per use case.
 
-The important part is not the exact folder names. The important part is preserving the boundary between domain logic and infrastructure.
+  infrastructure/      ← DI wiring and environment config. Not business logic.
+    container.ts       ← Instantiates adapters and use cases. Imported by route handlers.
+    env.ts             ← Environment variable access
+
+  app/                 ← Next.js App Router. Delivery layer only.
+    api/               ← Route handlers. Call a use case, return a response. No logic.
+
+packages/types/        ← Shared branded types and AttemptResult used across apps.
+```
+
+### Rules per layer
+
+| Layer | May import from | Must not import from |
+|---|---|---|
+| `domain/` | `packages/types` | `adapters`, `infrastructure`, any SDK |
+| `ports/` | `packages/types`, `domain` | implementation code |
+| `adapters/` | `ports`, `packages/types`, SDKs | other adapters |
+| `application/` | `ports`, `domain`, `packages/types` | SDKs directly |
+| `app/api/` | `infrastructure/container` | adapters, domain, use cases directly |
+| `infrastructure/container.ts` | everything | — |
 
 ## Decision Checklist
 
@@ -271,6 +342,38 @@ Before adding a new file or abstraction, ask:
 5. Will this be easy for another engineer or LLM to understand in one pass?
 
 If the answer to the last question is no, simplify the design.
+
+## Application Tracker
+
+The Application Tracker is the most stateful part of the system. It maintains conversation history across multiple LLM turns and updates application state based on natural language input.
+
+Architectural placement:
+
+- Conversation state belongs in the adapter layer (`OpenAIApplicationAssistantAdapter`), not in the domain.
+- The domain defines what an application update looks like — plain typed data.
+- The use case (`ApplicationAssistantUseCase`) coordinates between the conversation adapter and the repository.
+
+The tracker does not belong in the domain core because it is not a deterministic transformation — it is a stateful, multi-turn orchestration concern. Build it last, once the team has established patterns on the simpler parts of the system.
+
+## MCP Architecture
+
+The MCP server is a delivery layer, not a logic layer. It exposes use cases as tools.
+
+Rules:
+
+- MCP tools map 1:1 to use cases. A tool calls a use case and returns the result. Nothing more.
+- MCP tool handlers must not contain business logic.
+- MCP tools import from `infrastructure/container.ts` the same way API routes do.
+- The domain, ports, and adapters are unaware of MCP. Swapping from HTTP to MCP changes only the delivery layer.
+
+```typescript
+// MCP tool — thin wrapper, no logic
+server.tool('match_resume', async ({ jobId, resumeId }) => {
+  const result = await matchResumeUseCase.execute(jobId, resumeId)
+  if (!result.success) return { error: result.error.message }
+  return result.value
+})
+```
 
 ## Default Rule of Thumb
 
