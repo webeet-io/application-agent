@@ -1,12 +1,6 @@
 import OpenAI from 'openai'
 import type { AttemptResult } from '@ceevee/types'
-import {
-  buildChatInstructions,
-  extractChatReply,
-  type ChatMessage,
-  type ChatReply,
-  type OpenAIChatResponsePayload,
-} from '@/domain/chat'
+import { buildChatInstructions, type ChatMessage, type ChatReply, type ChatSource } from '@/domain/chat'
 import type { ChatAssistantError, IChatAssistantPort } from '@/ports/outbound/IChatAssistantPort'
 
 function toOpenAIInput(messages: ChatMessage[]) {
@@ -14,6 +8,92 @@ function toOpenAIInput(messages: ChatMessage[]) {
     role: message.role,
     content: message.content,
   }))
+}
+
+interface ResponseAnnotation {
+  type?: string
+  title?: string
+  url?: string
+}
+
+interface ResponseSourceItem {
+  type?: string
+  title?: string
+  url?: string
+}
+
+interface ResponseOutputContentItem {
+  type?: string
+  text?: string
+  annotations?: ResponseAnnotation[]
+}
+
+interface ResponseOutputItem {
+  type?: string
+  role?: string
+  content?: ResponseOutputContentItem[]
+  action?: {
+    sources?: ResponseSourceItem[]
+  }
+}
+
+interface OpenAIChatResponsePayload {
+  output_text?: string
+  output?: ResponseOutputItem[]
+}
+
+function dedupeSources(sources: ChatSource[]) {
+  const seen = new Set<string>()
+
+  return sources.filter((source) => {
+    const key = `${source.url}::${source.title}`
+    if (seen.has(key)) {
+      return false
+    }
+
+    seen.add(key)
+    return true
+  })
+}
+
+function extractChatReply(payload: OpenAIChatResponsePayload): ChatReply | null {
+  const messageContent = payload.output
+    ?.filter((item) => item.type === 'message' && item.role === 'assistant')
+    .flatMap((item) => item.content ?? [])
+
+  const reply =
+    payload.output_text?.trim() ??
+    messageContent
+      ?.filter((item) => item.type === 'output_text')
+      .map((item) => item.text?.trim())
+      .find((text): text is string => Boolean(text))
+
+  if (!reply) {
+    return null
+  }
+
+  const annotationSources =
+    messageContent
+      ?.flatMap((item) => item.annotations ?? [])
+      .filter((annotation) => annotation.type === 'url_citation')
+      .flatMap((annotation) =>
+        annotation.url && annotation.title
+          ? [{ url: annotation.url, title: annotation.title }]
+          : []
+      ) ?? []
+
+  const searchSources =
+    payload.output
+      ?.flatMap((item) => item.action?.sources ?? [])
+      .filter((source) => source.type === 'url')
+      .flatMap((source) =>
+        source.url && source.title ? [{ url: source.url, title: source.title }] : []
+      ) ?? []
+
+  return {
+    reply,
+    sources: dedupeSources([...annotationSources, ...searchSources]),
+  }
 }
 
 export class OpenAIChatAssistantAdapter implements IChatAssistantPort {
