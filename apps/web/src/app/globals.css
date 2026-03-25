@@ -175,6 +175,42 @@ textarea {
   line-height: 1.6;
 }
 
+.chat-bubble__sources {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(58, 44, 33, 0.12);
+}
+
+.chat-bubble__sources-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+}
+
+.chat-bubble__sources-list {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+}
+
+.chat-bubble__sources-list a {
+  color: inherit;
+}
+
+.chat-bubble__sources-list a:hover {
+  text-decoration: none;
+}
+
+.chat-bubble--user .chat-bubble__sources,
+.chat-bubble--user .chat-bubble__sources-label {
+  border-color: rgba(255, 247, 240, 0.18);
+  color: rgba(255, 247, 240, 0.78);
+}
+
 .chat-bubble--assistant {
   justify-self: start;
   background: var(--assistant);

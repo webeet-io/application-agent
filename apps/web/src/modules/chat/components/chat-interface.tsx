@@ -63,14 +63,20 @@ export function ChatInterface() {
       })
 
       const payload = (await response.json().catch(() => null)) as
-        | { reply?: string; error?: string }
+        | { reply?: string; error?: string; sources?: ChatMessage['sources'] }
         | null
 
       if (!response.ok || !payload?.reply) {
         throw new Error(payload?.error ?? 'The assistant could not respond.')
       }
 
-      setMessages((current) => [...current, createMessage('assistant', payload.reply!)])
+      setMessages((current) => [
+        ...current,
+        {
+          ...createMessage('assistant', payload.reply!),
+          sources: payload.sources,
+        },
+      ])
     } catch (caughtError) {
       const message =
         caughtError instanceof Error ? caughtError.message : 'The assistant could not respond.'
@@ -128,6 +134,20 @@ export function ChatInterface() {
                 {message.role === 'assistant' ? 'LLM' : 'User'}
               </span>
               <p>{message.content}</p>
+              {message.role === 'assistant' && message.sources?.length ? (
+                <div className="chat-bubble__sources">
+                  <span className="chat-bubble__sources-label">Sources</span>
+                  <ul className="chat-bubble__sources-list">
+                    {message.sources.map((source) => (
+                      <li key={`${source.url}-${source.title}`}>
+                        <a href={source.url} target="_blank" rel="noreferrer">
+                          {source.title}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
             </article>
           ))}
 
