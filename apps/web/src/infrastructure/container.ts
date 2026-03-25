@@ -3,11 +3,18 @@
 // Route handlers and MCP tools import use cases from here — never directly from adapters.
 
 import { OpenAICompanyDiscoveryAdapter } from '@/adapters/llm/OpenAICompanyDiscoveryAdapter'
+import { OpenAIChatAssistantAdapter } from '@/adapters/llm/OpenAIChatAssistantAdapter'
+import { AskChatUseCase } from '@/application/AskChatUseCase'
 import { DiscoverCompaniesUseCase } from '@/application/DiscoverCompaniesUseCase'
 import { env } from './env'
 
 // Adapters
 const companyDiscovery = new OpenAICompanyDiscoveryAdapter(env.openai.apiKey())
+const chatAssistant = new OpenAIChatAssistantAdapter(
+  env.openai.apiKey(),
+  env.openai.chatModel(),
+)
 
 // Use cases
 export const discoverCompaniesUseCase = new DiscoverCompaniesUseCase(companyDiscovery)
+export const askChatUseCase = new AskChatUseCase(chatAssistant)
