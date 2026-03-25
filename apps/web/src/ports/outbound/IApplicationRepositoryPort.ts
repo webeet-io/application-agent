@@ -11,6 +11,9 @@ export interface IApplicationRepositoryPort {
   updateStatus(id: ApplicationId, status: ApplicationStatus): Promise<AttemptResult<ApplicationRepositoryError, void>>
   delete(id: ApplicationId): Promise<AttemptResult<ApplicationRepositoryError, void>>
   
-  // ADD THIS LINE:
+  /**
+   * Performs a vector similarity search to find past applications 
+   * semantically related to the provided embedding.
+   */
   findSimilar(embedding: number[], limit: number): Promise<AttemptResult<ApplicationRepositoryError, Application[]>>
 }

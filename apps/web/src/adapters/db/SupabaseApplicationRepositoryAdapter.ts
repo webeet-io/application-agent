@@ -13,7 +13,7 @@ export class SupabaseApplicationRepositoryAdapter implements IApplicationReposit
   async save(_application: Application): Promise<AttemptResult<ApplicationRepositoryError, void>> {
     throw new Error('Not implemented')
   }
-
+mv apps/web/src/ports/IEmbeddingPort.ts apps/web/src/ports/outbound/IEmbeddingPort.ts
   async updateStatus(_id: ApplicationId, _status: ApplicationStatus): Promise<AttemptResult<ApplicationRepositoryError, void>> {
     throw new Error('Not implemented')
   }
