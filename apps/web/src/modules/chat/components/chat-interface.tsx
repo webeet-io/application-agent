@@ -1,6 +1,6 @@
 'use client'
 
-import { FormEvent, useEffect, useRef, useState } from 'react'
+import { FormEvent, Fragment, ReactNode, useEffect, useRef, useState } from 'react'
 import type { ChatMessage } from '@/modules/chat/types'
 
 const starterMessages: ChatMessage[] = [
@@ -24,6 +24,93 @@ function createMessage(role: ChatMessage['role'], content: string): ChatMessage 
     role,
     content,
   }
+}
+
+const markdownLinkPattern = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g
+const rawUrlPattern = /(https?:\/\/[^\s]+)(?![^<]*>|[^[]*\])/g
+
+function renderMessageContent(content: string): ReactNode {
+  return content.split('\n').map((line, lineIndex) => (
+    <Fragment key={`line-${lineIndex}`}>
+      {lineIndex > 0 ? <br /> : null}
+      {renderInlineContent(line)}
+    </Fragment>
+  ))
+}
+
+function renderInlineContent(line: string): ReactNode[] {
+  const nodes: ReactNode[] = []
+  let cursor = 0
+
+  for (const match of line.matchAll(markdownLinkPattern)) {
+    const [fullMatch, label, url] = match
+    const start = match.index ?? 0
+
+    if (start > cursor) {
+      nodes.push(...renderRawUrls(line.slice(cursor, start), cursor))
+    }
+
+    nodes.push(
+      <a
+        key={`md-${start}-${url}`}
+        className="chat-link"
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+      >
+        {label}
+      </a>
+    )
+
+    cursor = start + fullMatch.length
+  }
+
+  if (cursor < line.length) {
+    nodes.push(...renderRawUrls(line.slice(cursor), cursor))
+  }
+
+  return nodes.length ? nodes : [line]
+}
+
+function renderRawUrls(text: string, offset: number): ReactNode[] {
+  const nodes: ReactNode[] = []
+  let cursor = 0
+
+  for (const match of text.matchAll(rawUrlPattern)) {
+    const [url] = match
+    const start = match.index ?? 0
+
+    if (start > cursor) {
+      nodes.push(text.slice(cursor, start))
+    }
+
+    const trimmedUrl = url.replace(/[),.;!?]+$/, '')
+    const trailing = url.slice(trimmedUrl.length)
+
+    nodes.push(
+      <a
+        key={`url-${offset + start}-${trimmedUrl}`}
+        className="chat-link chat-link--raw"
+        href={trimmedUrl}
+        target="_blank"
+        rel="noreferrer"
+      >
+        {trimmedUrl}
+      </a>
+    )
+
+    if (trailing) {
+      nodes.push(trailing)
+    }
+
+    cursor = start + url.length
+  }
+
+  if (cursor < text.length) {
+    nodes.push(text.slice(cursor))
+  }
+
+  return nodes.length ? nodes : [text]
 }
 
 export function ChatInterface() {
@@ -133,15 +220,21 @@ export function ChatInterface() {
               <span className="chat-bubble__speaker">
                 {message.role === 'assistant' ? 'LLM' : 'User'}
               </span>
-              <p>{message.content}</p>
+              <p>{renderMessageContent(message.content)}</p>
               {message.role === 'assistant' && message.sources?.length ? (
                 <div className="chat-bubble__sources">
                   <span className="chat-bubble__sources-label">Sources</span>
                   <ul className="chat-bubble__sources-list">
                     {message.sources.map((source) => (
                       <li key={`${source.url}-${source.title}`}>
-                        <a href={source.url} target="_blank" rel="noreferrer">
-                          {source.title}
+                        <a
+                          className="chat-source-link"
+                          href={source.url}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <span>{source.title}</span>
+                          <span className="chat-source-link__url">{source.url}</span>
                         </a>
                       </li>
                     ))}

@@ -175,6 +175,36 @@ textarea {
   line-height: 1.6;
 }
 
+.chat-link {
+  color: var(--accent-strong);
+  font-weight: 700;
+  text-decoration-line: underline;
+  text-decoration-thickness: 2px;
+  text-decoration-color: rgba(201, 109, 66, 0.45);
+  text-underline-offset: 0.18em;
+  border-radius: 0.25rem;
+  outline: none;
+  transition:
+    color 120ms ease,
+    text-decoration-color 120ms ease,
+    background 120ms ease;
+}
+
+.chat-link:hover {
+  text-decoration: none;
+  color: #7f3e21;
+  background: rgba(201, 109, 66, 0.1);
+}
+
+.chat-link:focus-visible {
+  background: rgba(201, 109, 66, 0.14);
+  box-shadow: 0 0 0 3px rgba(201, 109, 66, 0.18);
+}
+
+.chat-link--raw {
+  word-break: break-all;
+}
+
 .chat-bubble__sources {
   margin-top: 14px;
   padding-top: 12px;
@@ -191,24 +221,78 @@ textarea {
 }
 
 .chat-bubble__sources-list {
-  margin: 8px 0 0;
-  padding-left: 18px;
+  margin: 10px 0 0;
+  padding-left: 0;
   display: grid;
-  gap: 6px;
+  gap: 8px;
+  list-style: none;
 }
 
-.chat-bubble__sources-list a {
+.chat-source-link {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(58, 44, 33, 0.1);
+  background: rgba(255, 255, 255, 0.52);
   color: inherit;
+  text-decoration: none;
+  transition:
+    transform 120ms ease,
+    border-color 120ms ease,
+    background 120ms ease,
+    box-shadow 120ms ease;
 }
 
-.chat-bubble__sources-list a:hover {
-  text-decoration: none;
+.chat-source-link:hover {
+  transform: translateY(-1px);
+  border-color: rgba(201, 109, 66, 0.34);
+  background: rgba(255, 248, 242, 0.9);
+  box-shadow: 0 8px 18px rgba(61, 42, 31, 0.08);
+}
+
+.chat-source-link:focus-visible {
+  outline: none;
+  border-color: rgba(201, 109, 66, 0.42);
+  box-shadow: 0 0 0 3px rgba(201, 109, 66, 0.18);
+}
+
+.chat-source-link__url {
+  font-size: 0.84rem;
+  color: var(--text-soft);
+  word-break: break-all;
+}
+
+.chat-bubble--user .chat-link {
+  color: #ffd4bf;
+  text-decoration-color: rgba(255, 212, 191, 0.45);
+}
+
+.chat-bubble--user .chat-link:hover {
+  color: #fff7f0;
+  background: rgba(255, 247, 240, 0.08);
+}
+
+.chat-bubble--user .chat-link:focus-visible {
+  background: rgba(255, 247, 240, 0.12);
+  box-shadow: 0 0 0 3px rgba(255, 247, 240, 0.14);
 }
 
 .chat-bubble--user .chat-bubble__sources,
-.chat-bubble--user .chat-bubble__sources-label {
+.chat-bubble--user .chat-bubble__sources-label,
+.chat-bubble--user .chat-source-link__url {
   border-color: rgba(255, 247, 240, 0.18);
   color: rgba(255, 247, 240, 0.78);
+}
+
+.chat-bubble--user .chat-source-link {
+  border-color: rgba(255, 247, 240, 0.12);
+  background: rgba(255, 247, 240, 0.06);
+}
+
+.chat-bubble--user .chat-source-link:hover {
+  border-color: rgba(255, 247, 240, 0.22);
+  background: rgba(255, 247, 240, 0.1);
 }
 
 .chat-bubble--assistant {
