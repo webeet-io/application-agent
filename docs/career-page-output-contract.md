@@ -22,7 +22,7 @@ export type CareerPageError =
   | { type: 'parse_failed'; raw: string }
 
 export interface ICareerPagePort {
-  fetchJobs(url: string): Promise<AttemptResult<CareerPageError, CareerPageResult>>
+  fetchJobs(url: string, provider?: ATSProvider): Promise<AttemptResult<CareerPageError, CareerPageResult>>
 }
 ```
 
@@ -36,4 +36,5 @@ Each `JobListing` must include:
 ## Notes
 - An empty `jobs` array is a valid success response when a page has no active listings.
 - `atsProvider` should be set to the detected provider or `unknown`.
+- If `provider` is passed, the adapter should honor it and skip detection.
 - Normalize `location` to a plain string. Do not attempt geo-resolution in this layer.

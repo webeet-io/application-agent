@@ -1,11 +1,12 @@
 # Career Page Scraper Flow
 
 ## High-Level Decision Tree
-1. Input: `careerPageUrl`.
-2. Detect ATS provider by URL patterns and page hints.
-3. If provider is supported, route to ATS-specific adapter.
-4. If provider is unknown, use the generic HTML scraper.
-5. Normalize output to `JobListing[]` and return with `atsProvider`.
+1. Input: `careerPageUrl` and optional `provider`.
+2. If `provider` is provided, use it directly.
+3. Otherwise, detect ATS provider by URL patterns and page hints.
+4. If provider is supported, route to ATS-specific adapter.
+5. If provider is unknown, use the generic HTML scraper.
+6. Normalize output to `JobListing[]` and return with `atsProvider`.
 
 ## ATS-Specific Adapters (Examples)
 - Greenhouse adapter

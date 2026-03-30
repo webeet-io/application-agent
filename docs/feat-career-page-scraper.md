@@ -12,11 +12,20 @@ Provide a consistent, normalized list of job listings from any career page (ATS 
 - Handle ATS-specific structures and unknown/custom pages
 - Clear error handling for fetch/parse failures
 
-## Deliverables (Docs First)
-- Output contract for `CareerPageScraperPort`
-- Scraper flow and decision tree (ATS vs unknown)
-- Error handling guidance
-- Test plan
+## Docs (Created First)
+- `docs/career-page-output-contract.md`
+- `docs/career-page-scraper-flow.md`
+- `docs/career-page-scraper-errors.md`
+- `docs/career-page-scraper-test-plan.md`
+
+## Implementation Status
+- `ICareerPagePort` updated to accept optional provider
+- `CareerPageAdapter` implemented with:
+  - Greenhouse JSON endpoint
+  - Lever JSON endpoint
+  - JSON-LD fallback for unknown pages
+- Use case added: `FetchCareerPageJobsUseCase`
+- Route added: `POST /api/career-pages/scrape`
 
 ## Not in Scope (for now)
 - Auto-apply
