@@ -13,10 +13,10 @@ Provide a consistent, normalized list of job listings from any career page (ATS 
 - Clear error handling for fetch/parse failures
 
 ## Docs (Created First)
-- `docs/career-page-output-contract.md`
-- `docs/career-page-scraper-flow.md`
-- `docs/career-page-scraper-errors.md`
-- `docs/career-page-scraper-test-plan.md`
+- `docs/features/scrapers/career-page-scraper/career-page-output-contract.md`
+- `docs/features/scrapers/career-page-scraper/career-page-scraper-flow.md`
+- `docs/features/scrapers/career-page-scraper/career-page-scraper-errors.md`
+- `docs/features/scrapers/career-page-scraper/career-page-scraper-test-plan.md`
 
 ## Implementation Status
 - `ICareerPagePort` updated to accept optional provider
