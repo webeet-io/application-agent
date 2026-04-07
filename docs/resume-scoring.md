@@ -59,3 +59,30 @@ Return:
 
 Main principle:
 Model the score as "how credible and low-risk is this candidate for this role?" instead of "how many keywords matched?"
+
+## Current implementation status
+
+The resume scoring / job fit work has been started as an independent functional core.
+
+Implemented so far:
+- Extended shared domain types in `packages/types/src/index.ts`
+- Added structured scoring input types such as `ResumeProfile`, `NormalizedJobPosting`, `JobRequirement`, and `ResumeSkillEvidence`
+- Added scoring output types such as `ResumeJobFitResult`, `RequirementAssessment`, `KnockoutAssessment`, `OverallMatchLevel`, and `EvidenceQuality`
+- Added a standalone match engine package under `packages/match-engine`
+- Added the pure scoring function `scoreResumeAgainstJob` in `packages/match-engine/src/score-resume-against-job.ts`
+- Added match-engine exports in `packages/match-engine/src/index.ts`
+- Added example resume/job scenarios in `packages/match-engine/src/fixtures.ts`
+- Added lightweight smoke-test checks in `packages/match-engine/src/smoke-tests.ts`
+
+The match engine currently evaluates:
+- knockout criteria such as required languages, location constraints, seniority mismatch, and missing critical technologies
+- requirement priority through `core`, `supporting`, and `nice_to_have`
+- match quality through `direct`, `transferable`, `inferable`, and `missing`
+- evidence strength and experience depth
+- seniority fit separately from technical skill fit
+- critical gaps versus learnable gaps
+- resume presentation improvements, for example when a skill only appears in a skills list
+- recommended skills to learn next
+
+
+
