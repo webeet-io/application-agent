@@ -155,6 +155,24 @@ export type PrioritizedSkillGap = {
   recommendation: ResumeReadinessRecommendation
 }
 
+export type DetectedRecurringGap = {
+  name: string
+  kind: SkillGapKind
+  frequencyAcrossRelevantJobs: number
+  jobsMatchedCount: number
+  targetRoleRelevance: number
+  confidence: number
+  isRecurring: boolean
+  contradictionMarker: boolean
+  evidence: {
+    jobsMatched: number
+    exampleJobTitles: string[]
+    missingFromResume: boolean
+    contradictedByUserInput: boolean
+    repeatedInApplicationHistory: boolean
+  }
+}
+
 export type LearningPathStep = {
   order: number
   bucket: LearningPathBucket
