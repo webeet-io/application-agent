@@ -1,29 +1,35 @@
 import type { AttemptResult } from '@ceevee/types'
-import { detectRecurringGaps } from '@/domain/recurring-skill-gap-detection'
-import { prioritizeGaps } from '@/domain/skill-gap-prioritization'
+import type { SkillGapPlan, SkillGapStrategyMode } from '@/domain/mentor-skill-gap'
+import type { IJobOpportunitySignalPort } from '@/ports/outbound/IJobOpportunitySignalPort'
+import type { ILearningProgressPort } from '@/ports/outbound/ILearningProgressPort'
+import type { ILearningResourcePort } from '@/ports/outbound/ILearningResourcePort'
+import type { IMentorSkillGapPreferencePort } from '@/ports/outbound/IMentorSkillGapPreferencePort'
+import type { IResumeSignalPort } from '@/ports/outbound/IResumeSignalPort'
+import type { ISkillGapApplicationHistoryPort } from '@/ports/outbound/ISkillGapApplicationHistoryPort'
+import type { IUserDeclaredSkillPort } from '@/ports/outbound/IUserDeclaredSkillPort'
 
-export class GenerateSkillGapPlanUseCase {
-  async execute(userId: string, strategyMode: 'get_hired_quickly' | 'long_term_growth' | 'balanced'): Promise<AttemptResult<Error, unknown>> {
-    const resume = await this.fetchResume(userId)
-    const opportunities = await this.fetchOpportunities(userId)
+export type GenerateSkillGapPlanInput = {
+  userId: string
+  strategyModeOverride?: SkillGapStrategyMode
+}
 
-    if (!resume || opportunities.length === 0) {
-      return { success: false, error: new Error('Missing data'), value: null }
-    }
+export type GenerateSkillGapPlanError =
+  | { type: 'preferences_not_found'; userId: string }
+  | { type: 'resume_not_found'; userId: string }
+  | { type: 'resume_signals_missing'; userId: string }
+  | { type: 'opportunities_unavailable'; userId: string }
+  | { type: 'unknown'; message: string }
 
-    const gaps = detectRecurringGaps(resume, opportunities)
-    const prioritized = prioritizeGaps(gaps, strategyMode)
+export type GenerateSkillGapPlanPorts = {
+  mentorSkillGapPreferencePort: IMentorSkillGapPreferencePort
+  resumeSignalPort: IResumeSignalPort
+  jobOpportunitySignalPort: IJobOpportunitySignalPort
+  applicationHistoryPort: ISkillGapApplicationHistoryPort
+  userDeclaredSkillPort: IUserDeclaredSkillPort
+  learningProgressPort: ILearningProgressPort
+  learningResourcePort?: ILearningResourcePort
+}
 
-    return { success: true, error: null, value: { strategyMode, prioritized } }
-  }
-
-  private async fetchResume(userId: string) {
-    // TODO: replace with real port
-    return { skills: [], experienceSignals: [], roleSignals: [], userId }
-  }
-
-  private async fetchOpportunities(userId: string) {
-    // TODO: replace with job port
-    return []
-  }
+export interface IGenerateSkillGapPlanUseCase {
+  execute(input: GenerateSkillGapPlanInput): Promise<AttemptResult<GenerateSkillGapPlanError, SkillGapPlan>>
 }
