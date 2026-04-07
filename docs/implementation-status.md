@@ -4,7 +4,7 @@
 
 | Issue | Status | Notes |
 |---|---|---|
-| `#18` Define domain model and prioritization rules | In Progress | Core Mentor-specific domain models, evidence rules, relevance rules, and prioritization logic now exist in code. Resume-readiness gates are still placeholder-level until Phase 6. |
+| `#18` Define domain model and prioritization rules | In Progress | Core Mentor-specific domain models, evidence rules, relevance rules, prioritization logic, and deterministic resume-readiness evaluation now exist in code. Final completion still depends on full orchestration and readiness integration. |
 | `#19` Define MVP input contract | Done | Implemented through the Mentor-specific input and preferences types in the domain contract and Phase 1 use-case contract. |
 | `#21` Create `GenerateSkillGapPlanUseCase` | In Progress | The contract and required outbound ports are defined. Full orchestration wiring is deferred to Phase 8. |
 | `#22` Implement recurring skill-gap detection | Done | Implemented in the Mentor-specific detector with golden tests for recurrence, contradiction handling, sparse resume behavior, and degraded single-job behavior. |
@@ -21,11 +21,10 @@
 
 ## Current Phase
 
-- Phase 5: learning path generation with effort estimates and exit criteria
+- Phase 6: deterministic resume-readiness gates
 
 ## Next Phases
 
-- Phase 6: deterministic resume-readiness gates
 - Phase 7: append-only progress logging and readiness recomputation
 - Phase 8: full `GenerateSkillGapPlanUseCase` orchestration wiring
 - Phase 9: remaining contradiction, sparse-data, and integration test coverage
