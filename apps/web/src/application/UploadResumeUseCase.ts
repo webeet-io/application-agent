@@ -24,8 +24,20 @@ export class UploadResumeUseCase {
   ) {}
 
   async execute(input: UploadResumeInput): Promise<AttemptResult<UploadResumeError, Resume>> {
+    if (!input.userId || input.userId.trim().length === 0) {
+      return { success: false, error: { type: 'db_error', message: 'userId is required' }, value: null }
+    }
+
     if (input.mimeType !== 'application/pdf') {
       return { success: false, error: { type: 'invalid_file_type', mimeType: input.mimeType }, value: null }
+    }
+
+    if (!input.fileName || input.fileName.trim().length === 0) {
+      return { success: false, error: { type: 'db_error', message: 'fileName is required' }, value: null }
+    }
+
+    if (!Number.isFinite(input.sizeBytes) || input.sizeBytes <= 0) {
+      return { success: false, error: { type: 'db_error', message: 'sizeBytes must be > 0' }, value: null }
     }
 
     const resumeId = randomUUID() as ResumeId
@@ -48,6 +60,7 @@ export class UploadResumeUseCase {
       id: resumeId,
       userId: input.userId,
       label: input.label,
+      // fileUrl stores the storage path; signed URLs are generated on demand.
       fileUrl: uploadResult.value.storagePath,
       storagePath: uploadResult.value.storagePath,
       originalFileName: input.fileName,

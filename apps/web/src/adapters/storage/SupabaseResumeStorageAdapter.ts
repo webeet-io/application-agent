@@ -12,6 +12,22 @@ export class SupabaseResumeStorageAdapter implements IResumeStoragePort {
   }
 
   async upload(input: ResumeStorageUploadInput): Promise<AttemptResult<ResumeStorageError, { storagePath: string }>> {
+    if (!input.userId || input.userId.trim().length === 0) {
+      return { success: false, error: { type: 'upload_failed', message: 'userId is required' }, value: null }
+    }
+
+    if (!input.fileName || input.fileName.trim().length === 0) {
+      return { success: false, error: { type: 'upload_failed', message: 'fileName is required' }, value: null }
+    }
+
+    if (!input.mimeType || input.mimeType.trim().length === 0) {
+      return { success: false, error: { type: 'upload_failed', message: 'mimeType is required' }, value: null }
+    }
+
+    if (!Number.isFinite(input.sizeBytes) || input.sizeBytes <= 0) {
+      return { success: false, error: { type: 'upload_failed', message: 'sizeBytes must be > 0' }, value: null }
+    }
+
     const safeFileName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, '_')
     const storagePath = `${input.userId}/${input.resumeId}/${safeFileName}`
 

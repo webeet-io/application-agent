@@ -22,7 +22,6 @@ The migration includes:
   - `job_listings`
   - `resumes`
   - `applications`
-  - `embeddings`
 - Indexes for common queries
 - RLS + Policies:
   - `resumes` & `applications` are owner-only
@@ -46,9 +45,8 @@ New/updated components:
 File: `packages/types/src/index.ts`
 
 ## Assumptions / Notes
-- Upload route currently expects `userId` in FormData (until Auth is wired).
+- Upload route uses the authenticated user from the server-side session.
 - `fileUrl` currently stores the storage path (signed URLs can be generated later).
-- Embedding vector dimension set to `1536`.
 
 ## Not Done
 - Migration executed in Supabase

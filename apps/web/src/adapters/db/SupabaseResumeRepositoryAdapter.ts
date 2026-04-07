@@ -71,6 +71,30 @@ export class SupabaseResumeRepositoryAdapter implements IResumeRepositoryPort {
   }
 
   async save(resume: Resume): Promise<AttemptResult<ResumeRepositoryError, void>> {
+    if (!resume.userId || resume.userId.trim().length === 0) {
+      return { success: false, error: { type: 'db_error', message: 'userId is required' }, value: null }
+    }
+
+    if (!resume.storagePath || resume.storagePath.trim().length === 0) {
+      return { success: false, error: { type: 'db_error', message: 'storagePath is required' }, value: null }
+    }
+
+    if (!resume.storagePath.startsWith(`${resume.userId}/`)) {
+      return { success: false, error: { type: 'db_error', message: 'storagePath must be scoped to userId' }, value: null }
+    }
+
+    if (!resume.originalFileName || resume.originalFileName.trim().length === 0) {
+      return { success: false, error: { type: 'db_error', message: 'originalFileName is required' }, value: null }
+    }
+
+    if (!resume.mimeType || resume.mimeType.trim().length === 0) {
+      return { success: false, error: { type: 'db_error', message: 'mimeType is required' }, value: null }
+    }
+
+    if (!Number.isFinite(resume.sizeBytes) || (resume.sizeBytes ?? 0) <= 0) {
+      return { success: false, error: { type: 'db_error', message: 'sizeBytes must be > 0' }, value: null }
+    }
+
     const { error } = await this.client
       .from('resumes')
       .insert({
@@ -78,10 +102,10 @@ export class SupabaseResumeRepositoryAdapter implements IResumeRepositoryPort {
         user_id: resume.userId,
         label: resume.label,
         file_url: resume.fileUrl,
-        storage_path: resume.storagePath ?? resume.fileUrl,
-        original_file_name: resume.originalFileName ?? 'resume.pdf',
-        mime_type: resume.mimeType ?? 'application/pdf',
-        size_bytes: resume.sizeBytes ?? 0,
+        storage_path: resume.storagePath,
+        original_file_name: resume.originalFileName,
+        mime_type: resume.mimeType,
+        size_bytes: resume.sizeBytes,
         created_at: resume.createdAt.toISOString(),
       })
 
