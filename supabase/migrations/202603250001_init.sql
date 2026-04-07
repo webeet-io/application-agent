@@ -1,5 +1,5 @@
 -- Initial schema for CeeVee (Application Agent)
--- Enables pgvector and defines core tables for resumes, jobs, applications, and embeddings.
+-- Enables pgvector and defines core tables for resumes, jobs, and applications.
 
 create extension if not exists pgcrypto;
 create extension if not exists vector;
@@ -86,26 +86,11 @@ create table if not exists applications (
 create index if not exists applications_user_id_idx on applications (user_id);
 create index if not exists applications_job_id_idx on applications (job_id);
 
-create table if not exists embeddings (
-  id uuid primary key default gen_random_uuid(),
-  resource_type text not null,
-  resource_id uuid not null,
-  chunk_index integer not null default 0,
-  content text not null,
-  embedding vector(1536) not null,
-  created_at timestamptz not null default now(),
-  constraint embeddings_resource_type_check check (resource_type in ('resume', 'job_listing', 'application', 'company'))
-);
-
-create unique index if not exists embeddings_resource_chunk_key on embeddings (resource_type, resource_id, chunk_index);
-create index if not exists embeddings_resource_idx on embeddings (resource_type, resource_id);
-
 -- Row Level Security
 alter table resumes enable row level security;
 alter table applications enable row level security;
 alter table companies enable row level security;
 alter table job_listings enable row level security;
-alter table embeddings enable row level security;
 
 create policy if not exists "resumes_select_own" on resumes
   for select using (auth.uid() = user_id);
