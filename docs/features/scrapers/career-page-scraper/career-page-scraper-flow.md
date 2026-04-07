@@ -8,6 +8,10 @@
 5. If provider is unknown, use the generic HTML scraper.
 6. Normalize output to `JobListing[]` and return with `atsProvider`.
 
+## Security
+- The route requires authentication.
+- Only public `http/https` URLs are allowed (no localhost or private IP ranges).
+
 ## ATS-Specific Adapters (Examples)
 - Greenhouse adapter
 - Lever adapter
