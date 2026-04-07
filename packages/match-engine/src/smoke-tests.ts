@@ -1,3 +1,4 @@
+import { buildDefaultMatchOutput } from './default-match-output'
 import { scoreResumeAgainstJob } from './score-resume-against-job'
 import { matchFixtures } from './fixtures'
 
@@ -43,12 +44,29 @@ export function runMatchEngineSmokeTests(): void {
     'Expected strong direct match fixture to produce a positive overall match level',
   )
   invariant(
+    strongDirectResult.scoreBand === 'medium' || strongDirectResult.scoreBand === 'high',
+    'Expected strong direct match fixture to produce a medium or high score band',
+  )
+  invariant(
     strongDirectResult.criticalGaps.length === 0,
     'Expected strong direct match fixture to avoid critical gaps',
   )
   invariant(
     strongDirectResult.learnableGaps.includes('Docker'),
     'Expected Docker to appear as a learnable gap in the strong direct match fixture',
+  )
+
+  const strongDirectOutput = buildDefaultMatchOutput(strongDirectResult)
+  invariant(
+    strongDirectOutput.displayTone === 'warning' ||
+      strongDirectOutput.displayTone === 'success',
+    'Expected default output to expose a frontend-friendly display tone',
+  )
+  invariant(
+    strongDirectOutput.recommendedSkillsToLearn.some(
+      (entry) => entry.skill === 'Docker',
+    ),
+    'Expected default output to expose Docker as a recommended skill to learn',
   )
 
   const transferableFixture = getFixture('transferable-typescript-readiness')
@@ -84,6 +102,10 @@ export function runMatchEngineSmokeTests(): void {
     'Expected blocked fixture to return blocked overall match level',
   )
   invariant(
+    blockedResult.scoreBand === 'low',
+    'Expected blocked fixture to return a low score band',
+  )
+  invariant(
     blockedResult.criticalGaps.includes('Node.js') &&
       blockedResult.criticalGaps.includes('PostgreSQL'),
     'Expected backend knockout fixture to flag Node.js and PostgreSQL as critical gaps',
@@ -113,5 +135,13 @@ export function runMatchEngineSmokeTests(): void {
       entry.includes('Docker'),
     ),
     'Expected presentation gap fixture to recommend surfacing Docker through projects or work bullets',
+  )
+
+  const presentationGapOutput = buildDefaultMatchOutput(presentationGapResult)
+  invariant(
+    presentationGapOutput.weaknesses.some(
+      (entry) => entry.label === 'Docker' && entry.type === 'presentation_gap',
+    ),
+    'Expected default output to expose Docker as a presentation gap',
   )
 }

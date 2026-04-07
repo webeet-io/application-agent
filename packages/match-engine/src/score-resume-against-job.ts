@@ -10,6 +10,7 @@ import type {
   ResumeJobFitResult,
   ResumeProfile,
   ResumeSkillEvidence,
+  ScoreBand,
   SeniorityFit,
   SeniorityLevel,
 } from '@ceevee/types'
@@ -325,6 +326,18 @@ function deriveOverallMatchLevel(
   return 'low'
 }
 
+function deriveScoreBand(score: number): ScoreBand {
+  if (score < 50) {
+    return 'low'
+  }
+
+  if (score < 80) {
+    return 'medium'
+  }
+
+  return 'high'
+}
+
 function deriveStrengths(assessments: RequirementAssessment[]): string[] {
   return assessments
     .filter(
@@ -462,14 +475,17 @@ export function scoreResumeAgainstJob(
   const strengths = deriveStrengths(requirementAssessments)
   const criticalGaps = deriveCriticalGaps(requirementAssessments)
   const learnableGaps = deriveLearnableGaps(requirementAssessments)
-  const overallMatchLevel = deriveOverallMatchLevel(overallScore, knockout.blocked)
+  const roundedOverallScore = Number(overallScore.toFixed(1))
+  const scoreBand = deriveScoreBand(roundedOverallScore)
+  const overallMatchLevel = deriveOverallMatchLevel(roundedOverallScore, knockout.blocked)
   const resumeImprovementSuggestions =
     deriveResumeImprovementSuggestions(requirementAssessments)
   const recommendedSkillsToLearnNext =
     deriveRecommendedSkillsToLearnNext(requirementAssessments)
 
   const result: ResumeJobFitResult = {
-    overallScore: Number(overallScore.toFixed(1)),
+    overallScore: roundedOverallScore,
+    scoreBand,
     overallMatchLevel,
     knockout,
     seniorityFit,

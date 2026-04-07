@@ -69,6 +69,11 @@ export type SeniorityFit = 'aligned' | 'slightly_below' | 'clearly_below' | 'ove
 export type Learnability = 'fast' | 'moderate' | 'structural'
 export type EvidenceQuality = 'strong' | 'mixed' | 'weak'
 export type OverallMatchLevel = 'strong' | 'promising' | 'stretch' | 'low' | 'blocked'
+export type ScoreBand = 'low' | 'medium' | 'high'
+export type MatchDisplayTone = 'danger' | 'warning' | 'success'
+export type MatchGapSeverity = 'critical' | 'moderate' | 'low'
+export type MatchGapType = 'critical_gap' | 'learnable_gap' | 'presentation_gap'
+export type SkillLearningPriority = 'high' | 'medium' | 'low'
 
 export interface ResumeSkillEvidence {
   skill: string
@@ -138,6 +143,7 @@ export interface RequirementAssessment {
 
 export interface ResumeJobFitResult {
   overallScore: number
+  scoreBand: ScoreBand
   overallMatchLevel: OverallMatchLevel
   knockout: KnockoutAssessment
   seniorityFit: SeniorityFit
@@ -149,4 +155,32 @@ export interface ResumeJobFitResult {
   resumeImprovementSuggestions: string[]
   recommendedSkillsToLearnNext: string[]
   requirementAssessments: RequirementAssessment[]
+}
+
+export interface MatchOutputItem {
+  label: string
+  description: string
+  priority?: RequirementPriority
+}
+
+export interface MatchWeaknessItem extends MatchOutputItem {
+  severity: MatchGapSeverity
+  type: MatchGapType
+}
+
+export interface RecommendedSkillItem {
+  skill: string
+  reason: string
+  priority: SkillLearningPriority
+}
+
+export interface DefaultResumeMatchOutput {
+  overallScore: number
+  scoreBand: ScoreBand
+  displayTone: MatchDisplayTone
+  title: string
+  shortSummary: string
+  strengths: MatchOutputItem[]
+  weaknesses: MatchWeaknessItem[]
+  recommendedSkillsToLearn: RecommendedSkillItem[]
 }

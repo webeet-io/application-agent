@@ -84,5 +84,81 @@ The match engine currently evaluates:
 - resume presentation improvements, for example when a skill only appears in a skills list
 - recommended skills to learn next
 
+## Output strategy
+
+The match result should be structured so the frontend can display it clearly without needing to understand the scoring internals.
+
+The default output should work without AI, database access, resume parsing, job scraping, or UI-specific code.
+
+Core fields for display:
+- `overallScore`
+- `scoreBand`
+- `displayTone`
+- `title`
+- `shortSummary`
+- `strengths`
+- `weaknesses`
+- `recommendedSkillsToLearn`
+
+Score band rules:
+- `score < 50` -> `low`
+- `score < 80` -> `medium`
+- `score >= 80` -> `high`
+
+Display tone mapping:
+- `low` -> `danger`
+- `medium` -> `warning`
+- `high` -> `success`
+
+The frontend can later decide whether `danger` is red, `warning` is yellow, and `success` is green. The match engine should expose semantic UI hints, not hard-coded colors.
+
+## Core scoring vs AI adapter
+
+The scoring decision should stay in the deterministic match engine.
+
+The match engine owns:
+- final score
+- score band
+- knockout handling
+- seniority fit
+- requirement priority weighting
+- direct / transferable / inferable / missing match quality
+- critical gaps
+- learnable gaps
+- resume presentation gaps
+- recommended skills to learn next
+
+An AI adapter can be added later, but it should not be the source of truth for the candidate's fit.
+
+The AI adapter may help with:
+- extracting structured skills from resumes
+- extracting structured requirements from job descriptions
+- suggesting transferable skill relationships
+- improving the wording of summaries
+- improving the wording of resume improvement suggestions
+- making explanations more natural and readable
+
+The AI adapter should not:
+- overwrite the final score
+- ignore knockout criteria
+- compensate for missing core technical requirements with soft wording
+- turn a blocked or low-confidence match into a strong match
+- make the scoring behavior non-deterministic
+
+Recommended flow:
+1. Resume and job data are normalized into structured inputs.
+2. `scoreResumeAgainstJob(resume, job)` produces the deterministic fit result.
+3. `buildDefaultMatchOutput(result)` produces a frontend-friendly fallback output.
+4. A future AI adapter may rewrite or enrich explanation text, while preserving the deterministic scoring fields.
+
+This keeps the feature testable and understandable while still allowing better explanations later.
+
+What is intentionally not implemented yet:
+- resume PDF parsing
+- job scraping or ATS extraction
+- database persistence
+- UI integration
+- production-grade test runner setup
+- LLM/RAG integration
 
 
