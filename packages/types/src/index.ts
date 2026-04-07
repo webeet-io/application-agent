@@ -1,3 +1,8 @@
+// Result type for explicit error handling at I/O boundaries
+export type AttemptResult<E, T> =
+  | { success: true; error: null; value: T }
+  | { success: false; error: E; value: null }
+
 // Branded ID types — prevent passing wrong ID type at compile time
 export type ResumeId = string & { readonly _brand: 'ResumeId' }
 export type CompanyId = string & { readonly _brand: 'CompanyId' }
@@ -12,11 +17,22 @@ export interface Resume {
   createdAt: Date
 }
 
+// Global ATS providers + German-market providers (Personio, Softgarden, d.vinci are common in DE)
+export type ATSProvider =
+  | 'greenhouse'
+  | 'lever'
+  | 'workday'
+  | 'ashby'
+  | 'personio'
+  | 'softgarden'
+  | 'dvinci'
+  | 'unknown'
+
 export interface Company {
   id: CompanyId
   name: string
   careersUrl: string
-  atsProvider: 'greenhouse' | 'lever' | 'workday' | 'ashby' | 'unknown'
+  atsProvider: ATSProvider
 }
 
 export interface Job {
@@ -26,7 +42,7 @@ export interface Job {
   location: string
   description: string
   url: string
-  scrapedAt: Date
+  fetchedAt: Date
 }
 
 export type ApplicationStatus = 'saved' | 'applied' | 'interview' | 'rejected' | 'offer' | 'withdrawn'
