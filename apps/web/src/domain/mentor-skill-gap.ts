@@ -110,6 +110,21 @@ export type LearningProgressEvent = {
   details: string
 }
 
+export type LearningProgressSnapshot = {
+  gapName: string
+  gapKind: SkillGapKind
+  totalEvents: number
+  latestEventAt: string | null
+  completedStepOrders: number[]
+  hasProofBearingArtifact: boolean
+  hasUsageEvidence: boolean
+  hasExitCriterionCompletion: boolean
+  moderateOrStrongEvidenceCount: number
+  strongEvidenceCount: number
+  artifactContextCount: number
+  currentStage: 'not_started' | 'foundation' | 'practice' | 'proof'
+}
+
 export type EstimatedEffort = {
   band: 'short' | 'medium' | 'long'
   minWeeks: number
