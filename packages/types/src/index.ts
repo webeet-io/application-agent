@@ -64,3 +64,9 @@ export interface JobMatch {
   reasoning: string
   suggestedTweaks: string[]
 }
+
+export interface ApplicationInsight {
+  positivePatterns: string[];
+  warnings: string[];
+  overallAdvice: string;
+}
