@@ -86,11 +86,28 @@ create table if not exists applications (
 create index if not exists applications_user_id_idx on applications (user_id);
 create index if not exists applications_job_id_idx on applications (job_id);
 
+-- Embeddings (centralized store for multiple resource types)
+create table if not exists embeddings (
+  id uuid primary key default gen_random_uuid(),
+  resource_type text not null,
+  resource_id uuid not null,
+  chunk_index integer not null default 0,
+  content text null,
+  embedding vector(1536) not null,
+  user_id uuid null references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+
+create unique index if not exists embeddings_resource_unique_idx on embeddings (resource_type, resource_id, chunk_index);
+create index if not exists embeddings_resource_idx on embeddings (resource_type, resource_id);
+create index if not exists embeddings_user_id_idx on embeddings (user_id);
+
 -- Row Level Security
 alter table resumes enable row level security;
 alter table applications enable row level security;
 alter table companies enable row level security;
 alter table job_listings enable row level security;
+alter table embeddings enable row level security;
 
 create policy if not exists "resumes_select_own" on resumes
   for select using (auth.uid() = user_id);
@@ -108,6 +125,15 @@ create policy if not exists "applications_insert_own" on applications
 create policy if not exists "applications_update_own" on applications
   for update using (auth.uid() = user_id);
 create policy if not exists "applications_delete_own" on applications
+  for delete using (auth.uid() = user_id);
+
+create policy if not exists "embeddings_select_own" on embeddings
+  for select using (auth.uid() = user_id);
+create policy if not exists "embeddings_insert_own" on embeddings
+  for insert with check (auth.uid() = user_id);
+create policy if not exists "embeddings_update_own" on embeddings
+  for update using (auth.uid() = user_id);
+create policy if not exists "embeddings_delete_own" on embeddings
   for delete using (auth.uid() = user_id);
 
 -- Companies and job listings are readable by all authenticated users.
