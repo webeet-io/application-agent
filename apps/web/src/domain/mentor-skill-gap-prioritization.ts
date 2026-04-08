@@ -7,6 +7,12 @@ import type {
   WhyNowReason,
 } from './mentor-skill-gap'
 
+// NOTE: readiness state is not available at prioritization time.
+// DetectedRecurringGap carries no progress data — that is enriched later by
+// enrichPrioritizedGapsWithProgress in the use case, but too late to affect ranking.
+// As a result, computeReadinessScore always returns 0.3 and the get_hired_quickly
+// bonus in computeStrategyModifier never fires during initial ranking.
+// Known limitation — follow-up: thread readiness into DetectedRecurringGap before prioritization.
 const deriveReadinessState = (): SkillReadinessState => 'unknown'
 
 const buildDefaultReadinessRecommendation = (gap: DetectedRecurringGap): ResumeReadinessRecommendation => ({

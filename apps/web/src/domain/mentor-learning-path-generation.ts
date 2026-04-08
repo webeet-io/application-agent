@@ -8,6 +8,9 @@ import type {
   WhyNowReason,
 } from './mentor-skill-gap'
 
+// MVP: dependency ordering is hardcoded for the four most common infra skill sequences.
+// Any skill not in this map gets rank 999 and sorts after these four — this is intentional,
+// not an oversight. Extend this map as more domain-specific orderings are needed.
 const DEPENDENCY_ORDER: Record<string, number> = {
   docker: 10,
   kubernetes: 20,
