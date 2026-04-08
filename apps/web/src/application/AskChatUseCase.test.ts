@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { AskChatUseCase, askChatUseCaseConfig } from './AskChatUseCase'
 import type { ChatMessage, ChatReply } from '@/domain/chat'
-import type { IChatAssistantPort } from '@/ports/outbound/IChatAssistantPort'
+import type { ChatAssistantError, IChatAssistantPort } from '@/ports/outbound/IChatAssistantPort'
 
 function createAssistantPortMock(replyResult?: ChatReply): IChatAssistantPort {
   return {
@@ -9,6 +9,16 @@ function createAssistantPortMock(replyResult?: ChatReply): IChatAssistantPort {
       success: true,
       error: null,
       value: replyResult ?? { reply: 'ok', sources: [] },
+    }),
+  }
+}
+
+function createAssistantFailureMock(error: ChatAssistantError): IChatAssistantPort {
+  return {
+    reply: vi.fn().mockResolvedValue({
+      success: false,
+      error,
+      value: null,
     }),
   }
 }
@@ -70,5 +80,37 @@ describe('AskChatUseCase', () => {
     expect(forwardedMessages).toHaveLength(askChatUseCaseConfig.maxHistoryMessages)
     expect(forwardedMessages[0]?.id).toBe('3')
     expect(forwardedMessages.at(-1)?.id).toBe(String(askChatUseCaseConfig.maxHistoryMessages + 2))
+  })
+
+  it('maps adapter empty responses to a feature-level empty reply error', async () => {
+    const assistant = createAssistantFailureMock({ type: 'empty_response' })
+    const useCase = new AskChatUseCase(assistant)
+
+    const result = await useCase.execute([{ id: '1', role: 'user', content: 'Hello' }])
+
+    expect(result).toEqual({
+      success: false,
+      error: {
+        type: 'empty_reply',
+        message: 'The assistant returned an empty reply.',
+      },
+      value: null,
+    })
+  })
+
+  it('maps adapter call failures to a feature-level availability error', async () => {
+    const assistant = createAssistantFailureMock({ type: 'llm_call_failed', message: 'boom' })
+    const useCase = new AskChatUseCase(assistant)
+
+    const result = await useCase.execute([{ id: '1', role: 'user', content: 'Hello' }])
+
+    expect(result).toEqual({
+      success: false,
+      error: {
+        type: 'assistant_unavailable',
+        message: 'The assistant is currently unavailable. Please try again.',
+      },
+      value: null,
+    })
   })
 })

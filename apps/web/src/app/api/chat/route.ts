@@ -28,14 +28,11 @@ export async function POST(request: Request) {
       return Response.json({ error: result.error.message }, { status: 400 })
     }
 
-    if (result.error.type === 'empty_response') {
-      return Response.json({ error: 'The model returned an empty response.' }, { status: 502 })
+    if (result.error.type === 'empty_reply') {
+      return Response.json({ error: result.error.message }, { status: 502 })
     }
 
-    return Response.json(
-      { error: `OpenAI request failed: ${result.error.message}` },
-      { status: 502 }
-    )
+    return Response.json({ error: result.error.message }, { status: 502 })
   }
 
   return Response.json(result.value)

@@ -269,6 +269,7 @@ In the current implementation it is intentionally thin:
 - it receives `messages`
 - it normalizes and guards message history before crossing the port boundary
 - it rejects invalid request-level chat histories that do not fit the module contract
+- it maps adapter-level failures into feature-level chat errors before returning to the route
 - it delegates the normalized history to `assistant.reply(messages)`
 - it returns the result to the delivery layer
 
@@ -303,6 +304,7 @@ This means the current use case now performs minimal module-local orchestration 
 - container wires dependencies
 - provider-specific parsing is in the adapter, not in route or domain
 - the use case now owns minimal chat-history normalization and request-shape guardrails
+- the use case now translates adapter failures into chat-level errors
 - route-level failure mapping distinguishes invalid chat history from adapter failures
 - chat thread state helpers are separated from the hook and can be tested directly
 
@@ -339,6 +341,8 @@ Implemented:
 - enforces that the latest message must come from the user
 - caps forwarded history before the assistant call
 - returns a feature-level `invalid_message_history` error for invalid request histories
+- maps adapter `empty_response` to chat-level `empty_reply`
+- maps adapter `llm_call_failed` to chat-level `assistant_unavailable`
 
 Current decision:
 
@@ -347,7 +351,7 @@ Current decision:
 
 Possible future extensions that would still fit this module:
 
-- map adapter failures into a more feature-level chat error if needed
+- add finer-grained chat-level error semantics if the UI later needs to distinguish retryable vs configuration errors
 
 ### 2. `AskChatUseCase` remains a class for consistency with the current app structure
 
@@ -383,8 +387,9 @@ Current state:
 Coverage added in this branch:
 
 - invalid payload and invalid-history route mapping
-- empty-response and adapter-failure route mapping
+- feature-level empty-reply and assistant-unavailable route mapping
 - message normalization and history capping in the use case
+- adapter-failure to chat-error mapping in the use case
 - outgoing thread preparation and assistant-message creation for chat thread state
 - markdown-link, raw-URL, and line-break rendering behavior
 

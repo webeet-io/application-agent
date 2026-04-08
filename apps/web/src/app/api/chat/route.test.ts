@@ -58,7 +58,7 @@ describe('POST /api/chat', () => {
   it('maps empty model responses to 502', async () => {
     executeMock.mockResolvedValue({
       success: false,
-      error: { type: 'empty_response' },
+      error: { type: 'empty_reply', message: 'The assistant returned an empty reply.' },
       value: null,
     })
 
@@ -73,14 +73,17 @@ describe('POST /api/chat', () => {
 
     expect(response.status).toBe(502)
     await expect(response.json()).resolves.toEqual({
-      error: 'The model returned an empty response.',
+      error: 'The assistant returned an empty reply.',
     })
   })
 
   it('maps assistant failures to 502', async () => {
     executeMock.mockResolvedValue({
       success: false,
-      error: { type: 'llm_call_failed', message: 'boom' },
+      error: {
+        type: 'assistant_unavailable',
+        message: 'The assistant is currently unavailable. Please try again.',
+      },
       value: null,
     })
 
@@ -95,7 +98,7 @@ describe('POST /api/chat', () => {
 
     expect(response.status).toBe(502)
     await expect(response.json()).resolves.toEqual({
-      error: 'OpenAI request failed: boom',
+      error: 'The assistant is currently unavailable. Please try again.',
     })
   })
 

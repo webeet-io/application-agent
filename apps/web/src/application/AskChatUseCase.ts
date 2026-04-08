@@ -4,6 +4,11 @@ import type { ChatAssistantError, IChatAssistantPort } from '@/ports/outbound/IC
 
 const MAX_HISTORY_MESSAGES = 20
 
+export type AskChatError =
+  | { type: 'invalid_message_history'; message: string }
+  | { type: 'assistant_unavailable'; message: string }
+  | { type: 'empty_reply'; message: string }
+
 function normalizeMessages(messages: ChatMessage[]): ChatMessage[] {
   return messages
     .map((message) => ({
@@ -18,7 +23,7 @@ function normalizeMessages(messages: ChatMessage[]): ChatMessage[] {
 export class AskChatUseCase {
   constructor(private readonly assistant: IChatAssistantPort) {}
 
-  async execute(messages: ChatMessage[]): Promise<AttemptResult<ChatAssistantError, ChatReply>> {
+  async execute(messages: ChatMessage[]): Promise<AttemptResult<AskChatError, ChatReply>> {
     const normalizedMessages = normalizeMessages(messages)
 
     if (!normalizedMessages.length) {
@@ -44,10 +49,33 @@ export class AskChatUseCase {
       }
     }
 
-    return this.assistant.reply(normalizedMessages)
+    const result = await this.assistant.reply(normalizedMessages)
+    if (result.success) {
+      return result
+    }
+
+    return {
+      success: false,
+      error: mapAssistantError(result.error),
+      value: null,
+    }
   }
 }
 
 export const askChatUseCaseConfig = {
   maxHistoryMessages: MAX_HISTORY_MESSAGES,
+}
+
+function mapAssistantError(error: ChatAssistantError): AskChatError {
+  if (error.type === 'empty_response') {
+    return {
+      type: 'empty_reply',
+      message: 'The assistant returned an empty reply.',
+    }
+  }
+
+  return {
+    type: 'assistant_unavailable',
+    message: 'The assistant is currently unavailable. Please try again.',
+  }
 }
