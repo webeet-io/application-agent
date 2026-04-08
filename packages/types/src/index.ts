@@ -14,10 +14,10 @@ export interface Resume {
   userId: string
   label: string
   fileUrl: string
-  storagePath?: string
-  originalFileName?: string
-  mimeType?: string
-  sizeBytes?: number
+  storagePath: string
+  originalFileName: string
+  mimeType: string
+  sizeBytes: number
   createdAt: Date
 }
 
