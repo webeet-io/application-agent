@@ -3,16 +3,36 @@ import { Fragment, type ReactNode } from 'react'
 const markdownLinkPattern = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g
 const rawUrlPattern = /(https?:\/\/[^\s]+)(?![^<]*>|[^[]*\])/g
 
-export function renderMessageContent(content: string): ReactNode {
+interface RenderMessageContentOptions {
+  linkClassName?: string
+  rawLinkClassName?: string
+}
+
+const defaultLinkClassName =
+  'rounded-sm font-semibold underline decoration-2 underline-offset-[0.18em] outline-none transition-colors transition-[background-color,text-decoration-color] duration-150'
+
+const defaultRawLinkClassName = 'break-all'
+
+export function renderMessageContent(
+  content: string,
+  options: RenderMessageContentOptions = {},
+): ReactNode {
+  const linkClassName = options.linkClassName ?? defaultLinkClassName
+  const rawLinkClassName = options.rawLinkClassName ?? defaultRawLinkClassName
+
   return content.split('\n').map((line, lineIndex) => (
     <Fragment key={`line-${lineIndex}`}>
       {lineIndex > 0 ? <br /> : null}
-      {renderInlineContent(line)}
+      {renderInlineContent(line, linkClassName, rawLinkClassName)}
     </Fragment>
   ))
 }
 
-function renderInlineContent(line: string): ReactNode[] {
+function renderInlineContent(
+  line: string,
+  linkClassName: string,
+  rawLinkClassName: string,
+): ReactNode[] {
   const nodes: ReactNode[] = []
   let cursor = 0
 
@@ -21,13 +41,13 @@ function renderInlineContent(line: string): ReactNode[] {
     const start = match.index ?? 0
 
     if (start > cursor) {
-      nodes.push(...renderRawUrls(line.slice(cursor, start), cursor))
+      nodes.push(...renderRawUrls(line.slice(cursor, start), cursor, linkClassName, rawLinkClassName))
     }
 
     nodes.push(
       <a
         key={`md-${start}-${url}`}
-        className="chat-link"
+        className={linkClassName}
         href={url}
         target="_blank"
         rel="noreferrer"
@@ -40,13 +60,18 @@ function renderInlineContent(line: string): ReactNode[] {
   }
 
   if (cursor < line.length) {
-    nodes.push(...renderRawUrls(line.slice(cursor), cursor))
+    nodes.push(...renderRawUrls(line.slice(cursor), cursor, linkClassName, rawLinkClassName))
   }
 
   return nodes.length ? nodes : [line]
 }
 
-function renderRawUrls(text: string, offset: number): ReactNode[] {
+function renderRawUrls(
+  text: string,
+  offset: number,
+  linkClassName: string,
+  rawLinkClassName: string,
+): ReactNode[] {
   const nodes: ReactNode[] = []
   let cursor = 0
 
@@ -64,7 +89,7 @@ function renderRawUrls(text: string, offset: number): ReactNode[] {
     nodes.push(
       <a
         key={`url-${offset + start}-${trimmedUrl}`}
-        className="chat-link chat-link--raw"
+        className={`${linkClassName} ${rawLinkClassName}`}
         href={trimmedUrl}
         target="_blank"
         rel="noreferrer"

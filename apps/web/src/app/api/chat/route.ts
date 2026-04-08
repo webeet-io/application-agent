@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import type { ChatMessage } from '@/domain/chat'
 import { askChatUseCase } from '@/infrastructure/container'
 
 const requestSchema = z.object({
