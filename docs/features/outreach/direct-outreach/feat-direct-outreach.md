@@ -32,6 +32,8 @@ Enable users to find key hiring contacts, validate email deliverability, draft a
 - `apps/web/src/adapters/outreach/EmailValidationAdapter.ts`
 - `apps/web/src/adapters/outreach/EmailDraftAdapter.ts`
 
+Current behavior: all outreach adapters return `provider_unavailable` / `llm_failed` until a real provider is configured.
+
 ### Repository Adapter
 - `apps/web/src/adapters/db/SupabaseOutreachRepositoryAdapter.ts`
   - Validates ownership against `applications` before inserting into `outreach_logs`.
