@@ -1,0 +1,11 @@
+{
+    "model": "Qwen/Qwen2.5-72B-Instruct",
+    "provider": "novita",
+    "servers": [
+        {
+            "type": "stdio",
+            "command": "npx",
+            "args": ["@playwright/mcp@latest"]
+        }
+    ]
+}
