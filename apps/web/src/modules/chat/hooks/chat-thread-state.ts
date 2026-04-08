@@ -31,6 +31,7 @@ export function createChatMessage(
 export interface ChatResponsePayload {
   reply?: string
   error?: string
+  debugDetail?: string
   sources?: ChatMessage['sources']
 }
 

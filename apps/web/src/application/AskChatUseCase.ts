@@ -6,8 +6,8 @@ const MAX_HISTORY_MESSAGES = 20
 
 export type AskChatError =
   | { type: 'invalid_message_history'; message: string }
-  | { type: 'assistant_unavailable'; message: string }
-  | { type: 'empty_reply'; message: string }
+  | { type: 'assistant_unavailable'; message: string; debugDetail?: string }
+  | { type: 'empty_reply'; message: string; debugDetail?: string }
 
 function normalizeMessages(messages: ChatMessage[]): ChatMessage[] {
   return messages
@@ -71,11 +71,13 @@ function mapAssistantError(error: ChatAssistantError): AskChatError {
     return {
       type: 'empty_reply',
       message: 'The assistant returned an empty reply.',
+      debugDetail: 'The OpenAI response did not contain assistant text in output_text or assistant message content.',
     }
   }
 
   return {
     type: 'assistant_unavailable',
     message: 'The assistant is currently unavailable. Please try again.',
+    debugDetail: error.message,
   }
 }

@@ -14,6 +14,7 @@ const requestSchema = z.object({
 })
 
 export const runtime = 'nodejs'
+const exposeDebugDetail = process.env.NODE_ENV !== 'production'
 
 export async function POST(request: Request) {
   const parsed = requestSchema.safeParse(await request.json().catch(() => null))
@@ -29,10 +30,22 @@ export async function POST(request: Request) {
     }
 
     if (result.error.type === 'empty_reply') {
-      return Response.json({ error: result.error.message }, { status: 502 })
+      return Response.json(
+        {
+          error: result.error.message,
+          debugDetail: exposeDebugDetail ? result.error.debugDetail : undefined,
+        },
+        { status: 502 },
+      )
     }
 
-    return Response.json({ error: result.error.message }, { status: 502 })
+    return Response.json(
+      {
+        error: result.error.message,
+        debugDetail: exposeDebugDetail ? result.error.debugDetail : undefined,
+      },
+      { status: 502 },
+    )
   }
 
   return Response.json(result.value)

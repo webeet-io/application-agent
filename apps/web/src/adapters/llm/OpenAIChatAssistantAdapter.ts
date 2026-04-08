@@ -42,6 +42,28 @@ interface OpenAIChatResponsePayload {
   output?: ResponseOutputItem[]
 }
 
+function formatRuntimeError(error: unknown): string {
+  if (!(error instanceof Error)) {
+    return 'unknown error'
+  }
+
+  const errorWithMeta = error as Error & {
+    status?: number
+    code?: string
+    type?: string
+  }
+
+  const details = [
+    error.name || 'Error',
+    typeof errorWithMeta.status === 'number' ? `status=${String(errorWithMeta.status)}` : null,
+    typeof errorWithMeta.code === 'string' ? `code=${errorWithMeta.code}` : null,
+    typeof errorWithMeta.type === 'string' ? `type=${errorWithMeta.type}` : null,
+    error.message ? `message=${error.message}` : null,
+  ].filter((part): part is string => Boolean(part))
+
+  return details.join(' | ')
+}
+
 function dedupeSources(sources: ChatSource[]) {
   const seen = new Set<string>()
 
@@ -136,7 +158,7 @@ export class OpenAIChatAssistantAdapter implements IChatAssistantPort {
         success: false,
         error: {
           type: 'llm_call_failed',
-          message: error instanceof Error ? error.message : 'unknown error',
+          message: formatRuntimeError(error),
         },
         value: null,
       }

@@ -2,121 +2,265 @@
 
 ## Purpose
 
-This document describes the chat module implemented for the CeeVee / Application Agent chat interface work.
+This document is the integration contract for the chat interface module implemented in this repository.
 
-It exists to make the module boundaries explicit:
+It is written primarily for LLM-based contributors that need to understand:
 
-- what the chat module does
-- what goes in the backend part of the module
-- what goes in the frontend part of the module
-- which parts belong to route, use case, port, and adapter
-- what is already implemented
-- what is still open and should be treated as TODO
+- what this module does
+- how to call it
+- what data it expects and returns
+- which files belong to it
+- where its boundaries are
+- what must not be pushed into this module
 
-## Task Source
+This is not a task log and not a review checklist.
 
-The original GitHub issue is:
+## Module Summary
 
-- Issue `#32` — `LLM Chat Interface`
+The chat interface module provides one focused capability:
 
-Important note:
+- accept a threaded chat history from the frontend
+- request one assistant reply from an OpenAI-backed adapter
+- return the assistant reply plus extracted source links
+- render the conversation in the UI
+- support browser voice input in the composer
 
-- the current GitHub issue body is empty
-- the concrete task definition for this module therefore comes from the task brief used in the PR and implementation work
+At the current stage, this is a request-driven chat module.
 
-That task brief requires:
+It is not a persistent assistant, not a tracker, and not a mentor system.
 
-- a dedicated chat UI
-- a backend `/api/chat` route connected to OpenAI
-- source extraction for web-backed answers
-- clickable links in assistant output
-- voice input with live meter
-- shared root `.env` loading
-- startup scripts and README
-- alignment with the repo architecture `route -> use case -> port -> adapter`
+## What This Module Owns
 
-## Module Scope
+This module owns:
 
-This module is responsible for one concrete product capability:
+- the chat page UI
+- local chat thread state in the browser
+- browser voice input behavior for the chat composer
+- the `/api/chat` delivery endpoint
+- chat-specific application orchestration in `AskChatUseCase`
+- the outbound assistant port
+- the OpenAI chat adapter
+- assistant reply parsing and source extraction
+- clickable message-link rendering
 
-- the user sends chat messages
-- the application asks an assistant for a reply
-- the assistant reply is rendered in the UI
-- sources are shown when available
-- the user may also dictate input through browser voice recognition
+## What This Module Does Not Own
 
-This module is **not** responsible for:
+Do not treat this module as the place for:
 
 - persistent server-side conversation memory
-- application-tracker state updates
-- resume analysis pipelines
-- mentor logic
 - repository-backed chat history
+- application-tracker state updates
+- mentor preferences, mentor memory, or mentor follow-up behavior
+- resume analysis pipelines
+- multi-step domain workflows outside the chat request/reply cycle
 
-At the current stage, the chat conversation is request-driven:
+If a future feature needs long-lived assistant memory, repository coordination, or cross-feature state updates, that should likely become a separate assistant/tracker boundary rather than an expansion of this module.
 
-- the frontend holds the message thread state
-- the frontend sends the current message history to `/api/chat`
-- the backend does not persist chat state between requests
+## Runtime Model
 
-## High-Level Module Boundary
+The runtime model is:
 
-### Frontend responsibility
+1. the browser holds the current message thread
+2. the browser sends the thread to `/api/chat`
+3. the route validates HTTP payload shape
+4. the use case normalizes and guards the chat history
+5. the use case calls the assistant port
+6. the OpenAI adapter calls the Responses API
+7. the adapter extracts assistant text and sources
+8. the route returns a JSON payload
+9. the frontend appends the assistant message locally
 
-The frontend chat module is responsible for:
+Important consequence:
 
-- rendering the conversation UI
-- holding client-side thread state
-- sending requests to `/api/chat`
-- rendering assistant messages and sources
-- turning inline links into clickable output
-- handling browser speech recognition and audio meter behavior
+- the backend does not persist chat history between requests
+- the full active thread is sent by the client on each request
 
-### Backend responsibility
+## Backend Contract
 
-The backend chat module is responsible for:
+### HTTP Entry Point
 
-- receiving validated chat requests
-- delegating chat execution through the application boundary
-- calling the assistant adapter through a port
-- mapping OpenAI output into domain-safe chat reply data
-- returning structured success or failure responses
+- file: `apps/web/src/app/api/chat/route.ts`
+- method: `POST`
+- path: `/api/chat`
 
-### External dependency boundary
+### Request Shape
 
-The chat module talks to OpenAI through:
+```ts
+{
+  messages: Array<{
+    id: string
+    role: 'user' | 'assistant'
+    content: string
+  }>
+}
+```
 
-- port: `IChatAssistantPort`
-- adapter: `OpenAIChatAssistantAdapter`
+HTTP-level validation enforces:
 
-This keeps provider-specific SDK usage outside route and domain code.
+- `messages` exists
+- `messages` contains at least one item
+- each item has `id`
+- each item has `role`
+- each item has non-empty `content`
 
-## Current Architecture in This Branch
+### Use-Case-Level Guardrails
 
-### Backend flow
+After HTTP validation, the chat use case applies module-level orchestration rules:
 
-The current backend flow is:
+- trims message content
+- removes blank messages that become empty after trimming
+- forwards only the latest configured history window
+- requires the latest message to be from the user
+- maps adapter failures into chat-level errors
 
-1. `POST /api/chat` receives `{ messages }`
-2. the route validates HTTP payload shape with `zod`
-3. the route calls `askChatUseCase.execute(messages)`
-4. the use case calls the outbound assistant port
-5. the OpenAI adapter calls the Responses API
-6. the adapter parses assistant text and sources
-7. the route maps `AttemptResult` to HTTP JSON response
+Current history cap:
 
-### Frontend flow
+- `20` messages
 
-The current frontend flow is:
+### Success Response
 
-1. the user types or dictates a message
-2. `useChatThread()` appends the local user message
-3. the hook sends the full thread to `/api/chat`
-4. the assistant reply is appended on success
-5. a fallback assistant error message is appended on failure
-6. `useVoiceInput()` manages browser speech recognition and the live meter
+```ts
+{
+  reply: string
+  sources: Array<{
+    title: string
+    url: string
+  }>
+}
+```
 
-## Files in This Module
+### Error Response
+
+```ts
+{
+  error: string
+}
+```
+
+Current error categories at the use-case boundary are:
+
+- invalid chat history
+- assistant unavailable
+- empty assistant reply
+
+The route converts these into HTTP responses.
+
+## Frontend Contract
+
+### UI Entry
+
+- file: `apps/web/src/app/page.tsx`
+- main component: `ChatInterface`
+
+### Frontend Responsibilities
+
+The frontend chat module:
+
+- renders user and assistant messages
+- renders assistant sources under assistant replies
+- keeps the thread in local React state
+- sends the full thread to `/api/chat`
+- renders clickable markdown links and raw URLs
+- supports typed input and browser speech input
+- shows sending state and failure state
+
+### Voice Input
+
+Voice input is browser-based and lives entirely on the frontend side of this module.
+
+It currently provides:
+
+- microphone toggle button
+- repeated dictation across turns
+- live meter visualization
+- transcript insertion into the current composer value
+
+This module does not perform server-side speech processing.
+
+## Port and Adapter Boundary
+
+### Port
+
+- file: `apps/web/src/ports/outbound/IChatAssistantPort.ts`
+
+The port defines what the chat application layer needs from an assistant provider:
+
+- input: `ChatMessage[]`
+- output: `Promise<AttemptResult<ChatAssistantError, ChatReply>>`
+
+The port should stay provider-agnostic.
+
+### Adapter
+
+- file: `apps/web/src/adapters/llm/OpenAIChatAssistantAdapter.ts`
+
+The adapter owns:
+
+- OpenAI SDK integration
+- Responses API invocation
+- declaration of the `web_search` tool
+- provider-specific payload translation
+- extraction and deduplication of sources
+- mapping runtime provider failures into typed adapter errors
+
+The adapter must remain thin.
+
+Do not move chat application rules into the adapter.
+
+## Use Case Boundary
+
+### File
+
+- `apps/web/src/application/AskChatUseCase.ts`
+
+### Responsibility
+
+`AskChatUseCase` is the application action for:
+
+- given a chat history, ask the assistant for one reply
+
+Its job is orchestration, not provider integration and not UI behavior.
+
+At the current stage it is responsible for:
+
+- normalizing message history before the port call
+- rejecting invalid request-level histories
+- capping forwarded history
+- translating adapter failures into chat-level feature errors
+
+It must not own:
+
+- OpenAI SDK calls
+- source parsing
+- browser state
+- persistence
+- tracker-style memory
+
+## Domain Boundary
+
+### File
+
+- `apps/web/src/domain/chat.ts`
+
+The domain file currently defines:
+
+- `ChatRole`
+- `ChatSource`
+- `ChatMessage`
+- `ChatReply`
+- assistant instructions via `buildChatInstructions()`
+
+This layer should stay plain and provider-free.
+
+Do not add:
+
+- SDK imports
+- HTTP handling
+- route logic
+- React state
+- repository logic
+
+## Files That Belong to This Module
 
 ### Backend
 
@@ -133,288 +277,86 @@ The current frontend flow is:
 - `apps/web/src/app/page.tsx`
 - `apps/web/src/modules/chat/components/chat-interface.tsx`
 - `apps/web/src/modules/chat/hooks/use-chat-thread.ts`
+- `apps/web/src/modules/chat/hooks/chat-thread-state.ts`
 - `apps/web/src/modules/chat/hooks/use-voice-input.ts`
 - `apps/web/src/modules/chat/lib/render-message-content.tsx`
+- `apps/web/src/modules/chat/lib/parse-message-content.ts`
 - `apps/web/src/modules/chat/types.ts`
 
-### Supporting module files
+### Tests
 
+- `apps/web/src/app/api/chat/route.test.ts`
+- `apps/web/src/application/AskChatUseCase.test.ts`
+- `apps/web/src/modules/chat/hooks/chat-thread-state.test.ts`
+- `apps/web/src/modules/chat/lib/parse-message-content.test.ts`
+
+### Supporting Files
+
+- `apps/web/vitest.config.ts`
 - `scripts/with-root-env.sh`
 - `scripts/start-dev.sh`
 - `README.md`
 
-## Inputs and Outputs
+## How To Integrate This Module
 
-### Backend input
+If another contributor or LLM needs to integrate this module into a larger system, follow these rules:
 
-The backend input to the chat module is:
+1. Use the existing route -> use case -> port -> adapter shape.
+2. Keep HTTP parsing in the route only.
+3. Keep chat orchestration in `AskChatUseCase`.
+4. Keep provider-specific behavior in `OpenAIChatAssistantAdapter`.
+5. Keep frontend thread state on the frontend unless a separate persistent assistant boundary is explicitly introduced.
+6. Pass the full active thread to `/api/chat` on each request.
+7. Treat returned `sources` as optional UI data attached to the assistant reply.
 
-```ts
-{
-  messages: Array<{
-    id: string
-    role: 'user' | 'assistant'
-    content: string
-  }>
-}
-```
+## Current Product Behavior
 
-The current route enforces:
+The module currently supports web-backed answers by making the `web_search` tool available to the model.
 
-- `messages` must exist
-- at least one message must be present
-- every message must have `id`, `role`, and non-empty `content`
+Important clarification:
 
-### Backend output
+- the UI does not expose a separate web-search toggle
+- the adapter does not force every answer to use web search
+- the model decides whether web search is needed based on the instructions and the request
 
-On success, the backend returns:
+This is the current intended behavior for the module.
 
-```ts
-{
-  reply: string
-  sources: Array<{
-    title: string
-    url: string
-  }>
-}
-```
+## Constraints For Future Changes
 
-On failure, the backend returns an HTTP error payload such as:
+When extending this module, preserve these constraints:
 
-```ts
-{
-  error: string
-}
-```
+- do not introduce persistent chat memory here unless the product explicitly wants this module to become a stateful assistant boundary
+- do not move provider logic into the route or domain
+- do not move browser concerns into the backend
+- do not use this module as a shortcut for tracker or mentor features
+- do not turn the adapter into a business-logic service layer
 
-### Frontend input
+If a new requirement does not fit these constraints, create or extend another boundary instead of overloading this module.
 
-The frontend accepts:
+## Verification State
 
-- typed text in the textarea
-- dictated transcript from browser speech recognition
+The module currently has:
 
-### Frontend output
+- route tests
+- use-case tests
+- chat-thread-state tests
+- message-content parsing tests
+- passing `pnpm --filter web test`
+- passing `pnpm typecheck`
+- passing `pnpm lint`
 
-The frontend outputs:
+## Short Integration Summary
 
-- rendered user and assistant message bubbles
-- source links under assistant answers
-- clickable inline links in assistant message content
-- pending state while waiting
-- fallback assistant error message when the request fails
+Use this module when you need:
 
-## Domain, Port, Adapter, and Use Case Responsibilities
+- a request-driven chat UI
+- one assistant reply per request
+- optional source-backed answers
+- browser voice input in the composer
 
-### Domain
+Do not use this module as if it were:
 
-The domain layer for this module currently defines:
-
-- `ChatRole`
-- `ChatSource`
-- `ChatMessage`
-- `ChatReply`
-- base assistant instructions via `buildChatInstructions()`
-
-What belongs here:
-
-- plain chat types
-- plain data shapes
-- assistant instruction text that is part of module-level behavior
-
-What does **not** belong here:
-
-- OpenAI SDK calls
-- HTTP handling
-- browser state
-- provider response parsing
-
-### Port
-
-`IChatAssistantPort` defines the contract the application layer depends on:
-
-- given `ChatMessage[]`
-- return `Promise<AttemptResult<ChatAssistantError, ChatReply>>`
-
-This expresses:
-
-- the application needs “a chat assistant”
-- but should not know whether that assistant is OpenAI or something else
-
-### Adapter
-
-`OpenAIChatAssistantAdapter` owns:
-
-- OpenAI SDK usage
-- Responses API call
-- web-search tool declaration
-- provider-specific payload parsing
-- extraction and deduplication of sources
-- mapping external failures into typed `ChatAssistantError`
-
-This is the correct place for:
-
-- SDK integration
-- response-shape translation
-- provider quirks
-
-### Use case
-
-`AskChatUseCase` represents the application action:
-
-- “given a chat history, ask the assistant for a reply”
-
-In the current implementation it is intentionally thin:
-
-- it receives `messages`
-- it normalizes and guards message history before crossing the port boundary
-- it rejects invalid request-level chat histories that do not fit the module contract
-- it maps adapter-level failures into feature-level chat errors before returning to the route
-- it delegates the normalized history to `assistant.reply(messages)`
-- it returns the result to the delivery layer
-
-This means the current use case now performs minimal module-local orchestration without taking over provider concerns or persistence concerns.
-
-## Current Alignment With the Task
-
-### Implemented
-
-- dedicated chat UI
-- user and assistant threaded messages
-- internal scroll area for longer threads
-- clickable inline links
-- source rendering below assistant replies
-- `/api/chat` route
-- OpenAI-backed assistant integration
-- web-search source extraction
-- browser voice input
-- live voice meter
-- repeated dictation support
-- shared root `.env` loading
-- startup script
-- README
-- `pnpm typecheck`
-
-### Architecture alignment that is already present
-
-- route layer exists
-- use case layer exists
-- port exists
-- adapter exists
-- container wires dependencies
-- provider-specific parsing is in the adapter, not in route or domain
-- the use case now owns minimal chat-history normalization and request-shape guardrails
-- the use case now translates adapter failures into chat-level errors
-- route-level failure mapping distinguishes invalid chat history from adapter failures
-- chat thread state helpers are separated from the hook and can be tested directly
-
-## Current Boundaries of Chat State
-
-At the current stage:
-
-- frontend thread state lives in `useChatThread()`
-- browser voice state lives in `useVoiceInput()`
-- backend does not persist conversation history
-- the server receives message history from the client on each request
-
-So for this module, “chat state” currently means:
-
-- client-side UI thread state
-- temporary request payload history
-
-It does **not** currently mean:
-
-- database-backed history
-- long-lived server-side session memory
-- tracker-style multi-turn state machine
-
-## Open Questions and TODO
-
-These are the remaining architecture questions and gaps identified from the implementation and PR review.
-
-### 1. `AskChatUseCase` now has explicit module-local orchestration
-
-Implemented:
-
-- trims and normalizes outgoing message content
-- removes blank messages that may survive HTTP shape validation
-- enforces that the latest message must come from the user
-- caps forwarded history before the assistant call
-- returns a feature-level `invalid_message_history` error for invalid request histories
-- maps adapter `empty_response` to chat-level `empty_reply`
-- maps adapter `llm_call_failed` to chat-level `assistant_unavailable`
-
-Current decision:
-
-- this logic belongs in the use case because it is application-flow orchestration for the chat module
-- it stays outside the route and outside the OpenAI adapter
-
-Possible future extensions that would still fit this module:
-
-- add finer-grained chat-level error semantics if the UI later needs to distinguish retryable vs configuration errors
-
-### 2. `AskChatUseCase` remains a class for consistency with the current app structure
-
-Decision:
-
-- it now owns a real application boundary plus module-level orchestration
-- the repo already uses class-based use cases wired through the container
-- keeping this shape avoids introducing a one-off pattern only for chat
-
-### 3. Define whether “web-backed answers” need a user-visible mode switch
-
-Current state:
-
-- the adapter always exposes the web-search tool to the model
-- the model decides whether to use it
-
-Open question:
-
-- is this enough for the intended product behavior
-- or should the UI/backend later expose explicit control for web-backed vs non-web-backed answering
-
-### 4. Add explicit module-level tests
-
-Current state:
-
-- the branch now includes focused module-level tests for:
-  - `AskChatUseCase`
-  - `/api/chat`
-  - chat thread state helpers used by `useChatThread()`
-  - link rendering helper behavior
-- the branch still passes `pnpm typecheck`
-
-Coverage added in this branch:
-
-- invalid payload and invalid-history route mapping
-- feature-level empty-reply and assistant-unavailable route mapping
-- message normalization and history capping in the use case
-- adapter-failure to chat-error mapping in the use case
-- outgoing thread preparation and assistant-message creation for chat thread state
-- markdown-link, raw-URL, and line-break rendering behavior
-
-### 5. Keep this module separate from tracker-style conversation state
-
-Current state:
-
-- this module is request-based and frontend-state-based
-
-Open question:
-
-- if persistent chat history or assistant memory is added later, does it still belong to this module
-- or does that become a separate assistant/tracker boundary with repository involvement
-
-Current recommendation:
-
-- keep this chat module simple
-- do not mix it yet with tracker or mentor persistence concerns
-
-## Summary
-
-This chat module is already a valid hex-aligned feature slice:
-
-- route for delivery
-- use case for application action
-- port for dependency contract
-- adapter for OpenAI integration
-- frontend module split into UI, thread state, voice input, and rendering helpers
+- a persistent assistant memory system
+- an application tracker
+- a mentor engine
+- a repository-backed multi-turn orchestration system

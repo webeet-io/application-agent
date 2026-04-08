@@ -54,12 +54,14 @@ function getSourceCardClassName(role: 'assistant' | 'user') {
 export function ChatInterface() {
   const {
     error,
+    errorDebugDetail,
     input,
     isSending,
     messageToRevealId,
     messages,
     sendMessage: submitMessage,
     setError,
+    setErrorDebugDetail,
     setInput,
     setMessageToRevealId,
   } = useChatThread()
@@ -70,7 +72,10 @@ export function ChatInterface() {
     onTranscript: (transcript) => {
       setInput((current) => (current.trim() ? `${current.trimEnd()} ${transcript}` : transcript))
     },
-    onClearError: () => setError(null),
+    onClearError: () => {
+      setError(null)
+      setErrorDebugDetail(null)
+    },
   })
 
   useEffect(() => {
@@ -238,7 +243,22 @@ export function ChatInterface() {
               </button>
             </div>
           </div>
-          {error ? <p className="mt-3 text-[0.92rem] text-[#9f2f24]">{error}</p> : null}
+          {error ? (
+            <div className="mt-3 rounded-[18px] border border-[rgba(159,47,36,0.15)] bg-[rgba(255,243,240,0.92)] px-4 py-3 text-[#9f2f24]">
+              <p className="m-0 text-[0.92rem]">{error}</p>
+              {errorDebugDetail ? (
+                <details className="mt-2 group">
+                  <summary className="inline-flex cursor-pointer list-none items-center gap-1 text-[0.78rem] font-semibold tracking-[0.01em] text-[rgba(122,46,35,0.92)] marker:content-none">
+                    <span className="transition-transform duration-150 group-open:rotate-180">▾</span>
+                    Developer detail
+                  </summary>
+                  <pre className="mt-2 overflow-x-auto whitespace-pre-wrap rounded-xl border border-[rgba(159,47,36,0.12)] bg-[rgba(255,255,255,0.72)] px-3 py-2 text-[0.75rem] leading-[1.45] text-[#6f2d22]">
+                    {errorDebugDetail}
+                  </pre>
+                </details>
+              ) : null}
+            </div>
+          ) : null}
           {notice ? <p className="m-0 text-[0.92rem] text-[#6d6055]">{notice}</p> : null}
         </form>
       </div>

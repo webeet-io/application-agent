@@ -93,6 +93,8 @@ describe('AskChatUseCase', () => {
       error: {
         type: 'empty_reply',
         message: 'The assistant returned an empty reply.',
+        debugDetail:
+          'The OpenAI response did not contain assistant text in output_text or assistant message content.',
       },
       value: null,
     })
@@ -109,6 +111,7 @@ describe('AskChatUseCase', () => {
       error: {
         type: 'assistant_unavailable',
         message: 'The assistant is currently unavailable. Please try again.',
+        debugDetail: 'boom',
       },
       value: null,
     })

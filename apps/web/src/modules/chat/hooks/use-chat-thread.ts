@@ -14,6 +14,7 @@ export function useChatThread() {
   const [messages, setMessages] = useState<ChatMessage[]>(starterMessages)
   const [input, setInput] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [errorDebugDetail, setErrorDebugDetail] = useState<string | null>(null)
   const [isSending, setIsSending] = useState(false)
   const [messageToRevealId, setMessageToRevealId] = useState<string | null>(null)
 
@@ -24,6 +25,7 @@ export function useChatThread() {
     setMessages(pendingSend.nextMessages)
     setInput('')
     setError(null)
+    setErrorDebugDetail(null)
     setIsSending(true)
 
     try {
@@ -40,7 +42,11 @@ export function useChatThread() {
       const payload = (await response.json().catch(() => null)) as ChatResponsePayload | null
 
       if (!response.ok || !payload?.reply) {
-        throw new Error(payload?.error ?? 'The assistant could not respond.')
+        const failure = new Error(payload?.error ?? 'The assistant could not respond.') as Error & {
+          debugDetail?: string
+        }
+        failure.debugDetail = payload?.debugDetail
+        throw failure
       }
 
       const assistantMessage = createAssistantSuccessMessage(payload.reply, payload.sources)
@@ -52,6 +58,11 @@ export function useChatThread() {
         caughtError instanceof Error ? caughtError.message : 'The assistant could not respond.'
 
       setError(message)
+      setErrorDebugDetail(
+        caughtError instanceof Error && 'debugDetail' in caughtError && typeof caughtError.debugDetail === 'string'
+          ? caughtError.debugDetail
+          : null,
+      )
 
       const assistantMessage = createAssistantFailureMessage()
 
@@ -64,12 +75,14 @@ export function useChatThread() {
 
   return {
     error,
+    errorDebugDetail,
     input,
     isSending,
     messageToRevealId,
     messages,
     sendMessage,
     setError,
+    setErrorDebugDetail,
     setInput,
     setMessageToRevealId,
   }
