@@ -45,7 +45,7 @@ print_urls() {
   fi
 
   echo
-  echo "Backend (Next.js API route im selben Server):"
+  echo "Backend (Next.js API route on the same server):"
   echo "  Local:   http://localhost:${FRONTEND_PORT}${BACKEND_PATH}"
 
   if ((${#ips[@]} > 0)); then
@@ -55,7 +55,7 @@ print_urls() {
   fi
 
   echo
-  echo "Stoppen mit Ctrl+C"
+  echo "Stop with Ctrl+C"
 }
 
 print_urls
