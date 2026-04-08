@@ -8,6 +8,7 @@ Outreach activity should appear in the application tracker so users can follow u
 outreach_logs
 - id
 - application_id
+- user_id
 - contact_name
 - contact_email
 - status (drafted | sent | follow_up_due)
@@ -18,5 +19,6 @@ outreach_logs
 
 ## Integration
 - Link by `application_id`.
+- Enforce ownership via `user_id` (RLS policy: owner-only).
 - Show outreach status next to application status.
 - Allow multiple outreach attempts per application.
