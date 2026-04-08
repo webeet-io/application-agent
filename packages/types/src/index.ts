@@ -55,12 +55,7 @@ export interface Application {
   status: ApplicationStatus
   appliedAt: Date | null
   notes: string | null
-  /**
-   * Vector embedding representing the job context (title, description, company type).
-   * Used for semantic similarity search in the RAG system.
-   * Typically 1536 dimensions for OpenAI models.
-   */
-  embedding?: number[]
+
 }
 
 export interface JobMatch {
