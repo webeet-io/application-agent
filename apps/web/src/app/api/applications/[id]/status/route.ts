@@ -2,13 +2,21 @@ import { NextRequest, NextResponse } from 'next/server'
 import type { ApplicationId } from '@ceevee/types'
 import { updateApplicationStatusUseCase } from '@/infrastructure/container'
 import type { ApplicationOutcome } from '@/application/UpdateApplicationStatusUseCase'
+import { createClient } from '@/lib/supabase/server'
 
 // Delivery layer responsibility: parse the HTTP request, call the use case, return a response.
 // No business logic here.
 export async function PATCH(request: NextRequest, context: { params: { id: string } }) {
-  const applicationId = context.params.id
+  const { id } = await context.params
+  const applicationId = id
   if (!applicationId) {
     return NextResponse.json({ error: 'application id is required' }, { status: 400 })
+  }
+
+  const supabase = await createClient()
+  const authResult = await supabase.auth.getUser()
+  if (authResult.error || !authResult.data.user) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
 
   let body: unknown
@@ -25,11 +33,14 @@ export async function PATCH(request: NextRequest, context: { params: { id: strin
     return NextResponse.json({ error: 'status is required' }, { status: 400 })
   }
 
-  const result = await updateApplicationStatusUseCase.execute(applicationId as ApplicationId, status)
+  const result = await updateApplicationStatusUseCase.execute(applicationId as ApplicationId, authResult.data.user.id, status)
 
   if (!result.success) {
     if (result.error.type === 'not_found') {
       return NextResponse.json({ error: result.error }, { status: 404 })
+    }
+    if (result.error.type === 'unsupported_outcome') {
+      return NextResponse.json({ error: result.error }, { status: 400 })
     }
 
     return NextResponse.json({ error: result.error }, { status: 502 })

@@ -21,10 +21,10 @@ export interface Application {
 - `userId` (owner)
 - `jobId` (link to job listing)
 - `resumeId` (which resume was used)
-- `status` (applied / interview / rejected / offer / no_response)
+- `status` (applied / interview / rejected / offer)
 - `appliedAt` (nullable)
 
 ## Notes
 - `status` currently supports: `saved`, `applied`, `interview`, `rejected`, `offer`, `withdrawn`.
-- `no_response` is a UI-level state that can map to `rejected` or `saved` until the domain adds it.
+- `no_response` requires a schema update (new enum value) before it can be stored. Until then, the API rejects it explicitly.
 - `notes` is optional but useful for follow-up context.

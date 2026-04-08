@@ -35,11 +35,12 @@ export class SupabaseApplicationRepositoryAdapter implements IApplicationReposit
     })
   }
 
-  async findById(id: ApplicationId): Promise<AttemptResult<ApplicationRepositoryError, Application>> {
+  async findById(id: ApplicationId, userId: string): Promise<AttemptResult<ApplicationRepositoryError, Application>> {
     const { data, error } = await this.client
       .from('applications')
       .select('*')
       .eq('id', id)
+      .eq('user_id', userId)
       .maybeSingle<ApplicationRow>()
 
     if (error) {
@@ -88,11 +89,12 @@ export class SupabaseApplicationRepositoryAdapter implements IApplicationReposit
     return { success: true, error: null, value: undefined }
   }
 
-  async updateStatus(id: ApplicationId, status: ApplicationStatus): Promise<AttemptResult<ApplicationRepositoryError, void>> {
+  async updateStatus(id: ApplicationId, userId: string, status: ApplicationStatus): Promise<AttemptResult<ApplicationRepositoryError, void>> {
     const { data, error } = await this.client
       .from('applications')
       .update({ status })
       .eq('id', id)
+      .eq('user_id', userId)
       .select('id')
 
     if (error) {
@@ -106,11 +108,12 @@ export class SupabaseApplicationRepositoryAdapter implements IApplicationReposit
     return { success: true, error: null, value: undefined }
   }
 
-  async delete(id: ApplicationId): Promise<AttemptResult<ApplicationRepositoryError, void>> {
+  async delete(id: ApplicationId, userId: string): Promise<AttemptResult<ApplicationRepositoryError, void>> {
     const { data, error } = await this.client
       .from('applications')
       .delete()
       .eq('id', id)
+      .eq('user_id', userId)
       .select('id')
 
     if (error) {

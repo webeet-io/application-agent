@@ -7,7 +7,7 @@ Track job applications and outcomes so the system can learn from past results an
 
 ## Scope (MVP)
 - Mark a job as applied
-- Record outcome updates: interviewing, rejected, no_response, offer
+- Record outcome updates: interviewing, rejected, offer
 - Store application history in Supabase
 
 ## Docs (Created First)
@@ -26,6 +26,9 @@ Track job applications and outcomes so the system can learn from past results an
   - `POST /api/applications/apply`
   - `PATCH /api/applications/{id}/status`
 - DI container wired for application tracker use cases
+
+## Notes
+- `no_response` is planned but requires a schema migration (new enum value). The API rejects it until then.
 
 ## Not in Scope (for now)
 - Auto-apply

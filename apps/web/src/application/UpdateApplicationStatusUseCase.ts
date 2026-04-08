@@ -4,16 +4,24 @@ import type { IApplicationRepositoryPort } from '@/ports/outbound/IApplicationRe
 export type UpdateApplicationStatusError =
   | { type: 'not_found'; id: string }
   | { type: 'db_error'; message: string }
+  | { type: 'unsupported_outcome'; outcome: ApplicationOutcome }
 
 export type ApplicationOutcome = ApplicationStatus | 'no_response'
 
 export class UpdateApplicationStatusUseCase {
   constructor(private readonly applications: IApplicationRepositoryPort) {}
 
-  async execute(id: ApplicationId, outcome: ApplicationOutcome): Promise<AttemptResult<UpdateApplicationStatusError, void>> {
+  async execute(
+    id: ApplicationId,
+    userId: string,
+    outcome: ApplicationOutcome,
+  ): Promise<AttemptResult<UpdateApplicationStatusError, void>> {
     const normalized = normalizeOutcome(outcome)
+    if (!normalized) {
+      return { success: false, error: { type: 'unsupported_outcome', outcome }, value: null }
+    }
 
-    const result = await this.applications.updateStatus(id, normalized)
+    const result = await this.applications.updateStatus(id, userId, normalized)
     if (!result.success) {
       return { success: false, error: result.error, value: null }
     }
@@ -22,7 +30,7 @@ export class UpdateApplicationStatusUseCase {
   }
 }
 
-function normalizeOutcome(outcome: ApplicationOutcome): ApplicationStatus {
-  if (outcome === 'no_response') return 'rejected'
+function normalizeOutcome(outcome: ApplicationOutcome): ApplicationStatus | null {
+  if (outcome === 'no_response') return null
   return outcome
 }
