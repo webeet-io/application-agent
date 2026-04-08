@@ -24,6 +24,10 @@ export async function POST(request: Request) {
   const result = await askChatUseCase.execute(parsed.data.messages)
 
   if (!result.success) {
+    if (result.error.type === 'invalid_message_history') {
+      return Response.json({ error: result.error.message }, { status: 400 })
+    }
+
     if (result.error.type === 'empty_response') {
       return Response.json({ error: 'The model returned an empty response.' }, { status: 502 })
     }

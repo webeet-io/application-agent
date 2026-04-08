@@ -1,7 +1,5 @@
 import { Fragment, type ReactNode } from 'react'
-
-const markdownLinkPattern = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g
-const rawUrlPattern = /(https?:\/\/[^\s]+)(?![^<]*>|[^[]*\])/g
+import { parseMessageContent } from './parse-message-content'
 
 interface RenderMessageContentOptions {
   linkClassName?: string
@@ -20,94 +18,35 @@ export function renderMessageContent(
   const linkClassName = options.linkClassName ?? defaultLinkClassName
   const rawLinkClassName = options.rawLinkClassName ?? defaultRawLinkClassName
 
-  return content.split('\n').map((line, lineIndex) => (
+  return parseMessageContent(content).map((segments, lineIndex) => (
     <Fragment key={`line-${lineIndex}`}>
       {lineIndex > 0 ? <br /> : null}
-      {renderInlineContent(line, linkClassName, rawLinkClassName)}
+      {renderInlineContent(segments, lineIndex, linkClassName, rawLinkClassName)}
     </Fragment>
   ))
 }
 
 function renderInlineContent(
-  line: string,
+  segments: ReturnType<typeof parseMessageContent>[number],
+  lineIndex: number,
   linkClassName: string,
   rawLinkClassName: string,
 ): ReactNode[] {
-  const nodes: ReactNode[] = []
-  let cursor = 0
-
-  for (const match of line.matchAll(markdownLinkPattern)) {
-    const [fullMatch, label, url] = match
-    const start = match.index ?? 0
-
-    if (start > cursor) {
-      nodes.push(...renderRawUrls(line.slice(cursor, start), cursor, linkClassName, rawLinkClassName))
+  return segments.map((segment, index) => {
+    if (segment.type === 'text') {
+      return segment.text
     }
 
-    nodes.push(
+    return (
       <a
-        key={`md-${start}-${url}`}
-        className={linkClassName}
-        href={url}
+        key={`line-${lineIndex}-segment-${index}-${segment.href}`}
+        className={segment.raw ? `${linkClassName} ${rawLinkClassName}` : linkClassName}
+        href={segment.href}
         target="_blank"
         rel="noreferrer"
       >
-        {label}
-      </a>,
+        {segment.label}
+      </a>
     )
-
-    cursor = start + fullMatch.length
-  }
-
-  if (cursor < line.length) {
-    nodes.push(...renderRawUrls(line.slice(cursor), cursor, linkClassName, rawLinkClassName))
-  }
-
-  return nodes.length ? nodes : [line]
-}
-
-function renderRawUrls(
-  text: string,
-  offset: number,
-  linkClassName: string,
-  rawLinkClassName: string,
-): ReactNode[] {
-  const nodes: ReactNode[] = []
-  let cursor = 0
-
-  for (const match of text.matchAll(rawUrlPattern)) {
-    const [url] = match
-    const start = match.index ?? 0
-
-    if (start > cursor) {
-      nodes.push(text.slice(cursor, start))
-    }
-
-    const trimmedUrl = url.replace(/[),.;!?]+$/, '')
-    const trailing = url.slice(trimmedUrl.length)
-
-    nodes.push(
-      <a
-        key={`url-${offset + start}-${trimmedUrl}`}
-        className={`${linkClassName} ${rawLinkClassName}`}
-        href={trimmedUrl}
-        target="_blank"
-        rel="noreferrer"
-      >
-        {trimmedUrl}
-      </a>,
-    )
-
-    if (trailing) {
-      nodes.push(trailing)
-    }
-
-    cursor = start + url.length
-  }
-
-  if (cursor < text.length) {
-    nodes.push(text.slice(cursor))
-  }
-
-  return nodes.length ? nodes : [text]
+  })
 }

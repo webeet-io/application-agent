@@ -267,53 +267,12 @@ This is the correct place for:
 In the current implementation it is intentionally thin:
 
 - it receives `messages`
-- it delegates to `assistant.reply(messages)`
+- it normalizes and guards message history before crossing the port boundary
+- it rejects invalid request-level chat histories that do not fit the module contract
+- it delegates the normalized history to `assistant.reply(messages)`
 - it returns the result to the delivery layer
 
-This means the current use case expresses the application action, but it does not yet perform visible multi-step orchestration.
-
-## What “Use Case” Means Here
-
-In this repository, a use case is:
-
-- one concrete application action
-- described from the point of view of what the system does
-
-For this module, the use case is:
-
-- the user asks the chat assistant something
-- the application gets an assistant reply
-
-That is why the file is called:
-
-- `AskChatUseCase`
-
-It is not supposed to hold provider code.
-It is not supposed to parse HTTP.
-It is not supposed to contain domain-heavy reasoning.
-
-It is the application-layer entry for the action.
-
-## What “AttemptResult” Means Here
-
-This repository uses `AttemptResult<E, T>` as an explicit success/failure wrapper at adapter and use-case boundaries.
-
-It means:
-
-- success returns `value`
-- failure returns a typed `error`
-- runtime failures are handled explicitly, not hidden in ad hoc exception flow
-
-For the chat module this is useful because:
-
-- the OpenAI adapter may fail
-- the use case should expose that failure clearly
-- the route can then map the failure to HTTP status and JSON output
-
-In short:
-
-- domain functions return plain values
-- adapter and use case boundaries return `AttemptResult`
+This means the current use case now performs minimal module-local orchestration without taking over provider concerns or persistence concerns.
 
 ## Current Alignment With the Task
 
@@ -343,6 +302,9 @@ In short:
 - adapter exists
 - container wires dependencies
 - provider-specific parsing is in the adapter, not in route or domain
+- the use case now owns minimal chat-history normalization and request-shape guardrails
+- route-level failure mapping distinguishes invalid chat history from adapter failures
+- chat thread state helpers are separated from the hook and can be tested directly
 
 ## Current Boundaries of Chat State
 
@@ -368,36 +330,32 @@ It does **not** currently mean:
 
 These are the remaining architecture questions and gaps identified from the implementation and PR review.
 
-### 1. Clarify the role of `AskChatUseCase`
+### 1. `AskChatUseCase` now has explicit module-local orchestration
 
-Current state:
+Implemented:
 
-- the use case is a thin pass-through
-- it expresses the action boundary, but not much orchestration yet
+- trims and normalizes outgoing message content
+- removes blank messages that may survive HTTP shape validation
+- enforces that the latest message must come from the user
+- caps forwarded history before the assistant call
+- returns a feature-level `invalid_message_history` error for invalid request histories
 
-Open question:
+Current decision:
 
-- should this stay a thin application action wrapper for the MVP
-- or should it gain minimal orchestration that clearly belongs to the chat module
+- this logic belongs in the use case because it is application-flow orchestration for the chat module
+- it stays outside the route and outside the OpenAI adapter
 
-Possible future orchestration that would still fit this module:
+Possible future extensions that would still fit this module:
 
-- filter invalid/empty messages after HTTP parsing
-- enforce “last message must be from the user”
-- cap history length before calling the assistant
-- normalize thread payload before calling the port
 - map adapter failures into a more feature-level chat error if needed
 
-### 2. Decide whether `AskChatUseCase` should stay a class
+### 2. `AskChatUseCase` remains a class for consistency with the current app structure
 
-Repo guidance says:
+Decision:
 
-- if a class does not manage real state or a real boundary, it may be better as a function
-
-Open question:
-
-- should `AskChatUseCase` remain a class for consistency with the route -> use case -> port -> adapter structure
-- or should it be simplified into a function-based use case
+- it now owns a real application boundary plus module-level orchestration
+- the repo already uses class-based use cases wired through the container
+- keeping this shape avoids introducing a one-off pattern only for chat
 
 ### 3. Define whether “web-backed answers” need a user-visible mode switch
 
@@ -415,15 +373,20 @@ Open question:
 
 Current state:
 
-- the branch passes `pnpm typecheck`
-- core functionality has been manually exercised
+- the branch now includes focused module-level tests for:
+  - `AskChatUseCase`
+  - `/api/chat`
+  - chat thread state helpers used by `useChatThread()`
+  - link rendering helper behavior
+- the branch still passes `pnpm typecheck`
 
-TODO:
+Coverage added in this branch:
 
-- add focused tests for `/api/chat`
-- add focused tests for `useChatThread()`
-- add focused tests for link rendering helper behavior
-- add focused tests for error and empty-response mapping
+- invalid payload and invalid-history route mapping
+- empty-response and adapter-failure route mapping
+- message normalization and history capping in the use case
+- outgoing thread preparation and assistant-message creation for chat thread state
+- markdown-link, raw-URL, and line-break rendering behavior
 
 ### 5. Keep this module separate from tracker-style conversation state
 
@@ -441,16 +404,6 @@ Current recommendation:
 - keep this chat module simple
 - do not mix it yet with tracker or mentor persistence concerns
 
-## Recommended Interpretation of the Module
-
-The cleanest way to understand this module today is:
-
-- it is a chat feature module
-- it includes a frontend chat experience and a backend chat action
-- its backend boundary is “ask the assistant for a reply”
-- its current state model is client-driven, not repository-driven
-- it follows the repo architecture shape, but the use case remains intentionally minimal for now
-
 ## Summary
 
 This chat module is already a valid hex-aligned feature slice:
@@ -460,11 +413,3 @@ This chat module is already a valid hex-aligned feature slice:
 - port for dependency contract
 - adapter for OpenAI integration
 - frontend module split into UI, thread state, voice input, and rendering helpers
-
-The main unresolved architecture point is not whether the module exists correctly.
-It does.
-
-The main unresolved point is:
-
-- whether `AskChatUseCase` should remain a thin wrapper for this MVP
-- or whether it should gain a small amount of visible orchestration to better justify the application layer boundary
