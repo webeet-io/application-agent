@@ -1,10 +1,72 @@
-import type { NormalizedJobPosting, ResumeProfile } from '@ceevee/types'
+import type {
+  CareerProfile,
+  NormalizedJobPosting,
+  ResumeProfile,
+} from '@ceevee/types'
 
 export interface MatchFixture {
   id: string
   description: string
   resume: ResumeProfile
   job: NormalizedJobPosting
+}
+
+export const careerProfileFixture: CareerProfile = {
+  userId: 'fixture-user',
+  label: 'Career profile from resume and user input',
+  seniority: 'junior',
+  languages: ['English', 'German'],
+  preferences: {
+    targetRoles: ['Frontend Engineer', 'Full-stack Engineer'],
+    locations: ['Berlin'],
+    remotePreference: 'hybrid',
+  },
+  skillEvidence: [
+    {
+      skill: 'TypeScript',
+      source: 'work_experience',
+      evidenceText: 'Built internal dashboards in TypeScript for 18 months.',
+      strength: 'work_experience',
+      depth: 'work_usage',
+      yearsOfExperience: 1.5,
+      confidence: 0.9,
+      visibleOnResume: true,
+    },
+    {
+      skill: 'React',
+      source: 'project',
+      evidenceText: 'Shipped multiple React projects for client portals.',
+      strength: 'project',
+      depth: 'multiple_projects',
+      yearsOfExperience: 1,
+      confidence: 0.85,
+      visibleOnResume: true,
+    },
+    {
+      skill: 'Docker',
+      source: 'user_input',
+      evidenceText: 'Used Docker locally for development, but not yet shown in resume projects.',
+      strength: 'skills_section',
+      depth: 'small_project',
+      confidence: 0.55,
+      visibleOnResume: false,
+    },
+  ],
+  workExperience: [
+    {
+      title: 'Frontend Developer Intern',
+      company: 'Example GmbH',
+      summary: 'Built internal dashboards and maintained frontend components.',
+      skills: ['TypeScript', 'React'],
+    },
+  ],
+  projects: [
+    {
+      name: 'Client portal prototype',
+      summary: 'Built a React portal prototype with API integration.',
+      skills: ['React', 'REST APIs'],
+    },
+  ],
 }
 
 export const matchFixtures: MatchFixture[] = [

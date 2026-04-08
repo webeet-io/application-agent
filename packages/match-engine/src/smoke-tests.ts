@@ -1,6 +1,7 @@
 import { buildDefaultMatchOutput } from './default-match-output'
+import { careerProfileToResumeProfile } from './career-profile-to-resume-profile'
 import { scoreResumeAgainstJob } from './score-resume-against-job'
-import { matchFixtures } from './fixtures'
+import { careerProfileFixture, matchFixtures } from './fixtures'
 
 function invariant(condition: unknown, message: string): asserts condition {
   if (!condition) {
@@ -32,6 +33,16 @@ function findAssessment(
 }
 
 export function runMatchEngineSmokeTests(): void {
+  const mappedResumeProfile = careerProfileToResumeProfile(careerProfileFixture)
+  invariant(
+    mappedResumeProfile.seniority === careerProfileFixture.seniority,
+    'Expected CareerProfile seniority to map to ResumeProfile seniority',
+  )
+  invariant(
+    mappedResumeProfile.skillEvidence.some((entry) => entry.skill === 'Docker'),
+    'Expected CareerProfile user-input skills to be available for scoring',
+  )
+
   const strongDirectMatch = getFixture('strong-direct-match')
   const strongDirectResult = scoreResumeAgainstJob(
     strongDirectMatch.resume,

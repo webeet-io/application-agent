@@ -90,6 +90,13 @@ export type MatchDisplayTone = 'danger' | 'warning' | 'success'
 export type MatchGapSeverity = 'critical' | 'moderate' | 'low'
 export type MatchGapType = 'critical_gap' | 'learnable_gap' | 'presentation_gap'
 export type SkillLearningPriority = 'high' | 'medium' | 'low'
+export type CareerProfileSkillSource =
+  | 'resume'
+  | 'user_input'
+  | 'work_experience'
+  | 'project'
+  | 'education'
+  | 'skills_section'
 
 export interface ResumeSkillEvidence {
   skill: string
@@ -100,6 +107,57 @@ export interface ResumeSkillEvidence {
   strength: EvidenceStrength
   depth: ExperienceDepth
   yearsOfExperience?: number
+}
+
+export interface CareerProfileSkillEvidence {
+  skill: string
+  aliases?: string[]
+  relatedSkills?: string[]
+  source: CareerProfileSkillSource
+  evidenceText: string
+  strength: EvidenceStrength
+  depth: ExperienceDepth
+  yearsOfExperience?: number
+  confidence?: number
+  visibleOnResume?: boolean
+}
+
+export interface CareerProfileWorkExperience {
+  title: string
+  company?: string
+  summary: string
+  skills?: string[]
+}
+
+export interface CareerProfileProject {
+  name: string
+  summary: string
+  skills?: string[]
+}
+
+export interface CareerProfileEducation {
+  label: string
+  summary?: string
+  skills?: string[]
+}
+
+export interface CareerProfilePreferences {
+  targetRoles?: string[]
+  locations?: string[]
+  remotePreference?: 'remote' | 'hybrid' | 'onsite' | 'flexible'
+}
+
+export interface CareerProfile {
+  userId: string
+  label?: string
+  seniority: SeniorityLevel
+  languages: string[]
+  preferences?: CareerProfilePreferences
+  skillEvidence: CareerProfileSkillEvidence[]
+  workExperience?: CareerProfileWorkExperience[]
+  projects?: CareerProfileProject[]
+  education?: CareerProfileEducation[]
+  additionalNotes?: string
 }
 
 export interface ResumeProfile {

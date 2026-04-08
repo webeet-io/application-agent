@@ -112,6 +112,54 @@ Display tone mapping:
 
 The frontend can later decide whether `danger` is red, `warning` is yellow, and `success` is green. The match engine should expose semantic UI hints, not hard-coded colors.
 
+## CareerProfile input strategy
+
+The scoring engine should not depend directly on resume PDFs or free-form user text.
+
+The main scoring data source should be the `CareerProfile`. A `ResumeProfile` is only a derived scoring view created from that broader profile.
+
+The intended long-term data flow is:
+1. Resume PDF, resume text, and additional user form input are collected.
+2. Those inputs are normalized into a `CareerProfile`.
+3. The match engine maps the `CareerProfile` into a scoring-specific `ResumeProfile`.
+4. `scoreResumeAgainstJob(resumeProfile, job)` evaluates the role fit.
+5. `buildDefaultMatchOutput(result)` creates the frontend-friendly fallback output.
+
+This keeps resume extraction, user input, and scoring separate.
+
+`CareerProfile` is the broader user model. It can include:
+- seniority
+- target roles
+- languages
+- location preferences
+- remote preference
+- skill evidence from resumes
+- skill evidence from additional user input
+- work experience
+- projects
+- education
+- additional notes
+
+`ResumeProfile` is the smaller scoring view. It contains only the data the match engine needs:
+- seniority
+- languages
+- locations
+- target roles
+- skill evidence
+
+This distinction helps separate real skill gaps from resume presentation gaps.
+
+Example:
+- If Docker appears only in additional user input, the candidate may have some Docker ability.
+- If Docker is not visible in the resume, the system can still recommend improving the resume evidence.
+- The scoring core can consider the signal without pretending it is strong work experience.
+
+Implemented preparation:
+- Added `CareerProfile` and related types in `packages/types/src/index.ts`
+- Added `careerProfileToResumeProfile` in `packages/match-engine/src/career-profile-to-resume-profile.ts`
+- Added a CareerProfile fixture in `packages/match-engine/src/fixtures.ts`
+- Added smoke checks for the mapping in `packages/match-engine/src/smoke-tests.ts`
+
 ## Core scoring vs AI adapter
 
 The scoring decision should stay in the deterministic match engine.
@@ -160,5 +208,3 @@ What is intentionally not implemented yet:
 - UI integration
 - production-grade test runner setup
 - LLM/RAG integration
-
-
