@@ -44,8 +44,11 @@ async function fetchGreenhouseJobs(url: string): Promise<AttemptResult<CareerPag
 
   const departments = Array.isArray(data.departments) ? data.departments : []
   departments.forEach((dept) => {
-    if (dept && typeof dept === 'object' && Array.isArray((dept as JsonObject).jobs)) {
-      ;(dept as JsonObject).jobs?.forEach((job) => pushGreenhouseJob(jobs, job))
+    if (dept && typeof dept === 'object') {
+      const departmentJobs = (dept as JsonObject).jobs
+      if (Array.isArray(departmentJobs)) {
+        departmentJobs.forEach((job: JsonValue) => pushGreenhouseJob(jobs, job))
+      }
     }
   })
 
@@ -318,6 +321,6 @@ function extractLocation(input: JsonValue): string {
   return ''
 }
 
-function readString(value: JsonValue): string {
+function readString(value: JsonValue | undefined): string {
   return typeof value === 'string' ? value.trim() : ''
 }
