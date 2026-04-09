@@ -1,4 +1,5 @@
 export { buildDefaultMatchOutput } from './default-match-output'
+export { buildCombinedResumeMatchResult } from './combined-match-result'
 export { careerProfileToResumeProfile } from './career-profile-to-resume-profile'
 export { scoreResumeAgainstJob } from './score-resume-against-job'
 export { matchFixtures } from './fixtures'

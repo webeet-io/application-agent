@@ -90,6 +90,7 @@ export type MatchDisplayTone = 'danger' | 'warning' | 'success'
 export type MatchGapSeverity = 'critical' | 'moderate' | 'low'
 export type MatchGapType = 'critical_gap' | 'learnable_gap' | 'presentation_gap'
 export type SkillLearningPriority = 'high' | 'medium' | 'low'
+export type DivergenceLevel = 'low' | 'moderate' | 'high'
 export type CareerProfileSkillSource =
   | 'resume'
   | 'user_input'
@@ -256,5 +257,45 @@ export interface DefaultResumeMatchOutput {
   shortSummary: string
   strengths: MatchOutputItem[]
   weaknesses: MatchWeaknessItem[]
+  recommendedImprovements: string[]
   recommendedSkillsToLearn: RecommendedSkillItem[]
+}
+
+export interface AiResumeMatchResult {
+  overallScore: number
+  overallMatchLevel: OverallMatchLevel
+  confidence: number
+  strengths: MatchOutputItem[]
+  weaknesses: MatchWeaknessItem[]
+  shortSummary: string
+  recommendedImprovements: string[]
+  recommendedSkillsToLearn: RecommendedSkillItem[]
+}
+
+export interface MatchComparisonResult {
+  fallbackScore: number
+  aiScore: number
+  scoreDifference: number
+  divergenceLevel: DivergenceLevel
+  reviewFlag: boolean
+}
+
+export interface CombinedResumeMatchOutput {
+  overallScore: number
+  scoreBand: ScoreBand
+  displayTone: MatchDisplayTone
+  title: string
+  shortSummary: string
+  strengths: MatchOutputItem[]
+  weaknesses: MatchWeaknessItem[]
+  recommendedImprovements: string[]
+  recommendedSkillsToLearn: RecommendedSkillItem[]
+}
+
+export interface CombinedResumeMatchResult {
+  fallbackResult: ResumeJobFitResult
+  fallbackOutput: DefaultResumeMatchOutput
+  aiResult: AiResumeMatchResult
+  comparison: MatchComparisonResult
+  combinedOutput: CombinedResumeMatchOutput
 }

@@ -1,7 +1,8 @@
+import { buildCombinedResumeMatchResult } from './combined-match-result'
 import { buildDefaultMatchOutput } from './default-match-output'
 import { careerProfileToResumeProfile } from './career-profile-to-resume-profile'
 import { scoreResumeAgainstJob } from './score-resume-against-job'
-import { careerProfileFixture, matchFixtures } from './fixtures'
+import { aiMatchFixture, careerProfileFixture, matchFixtures } from './fixtures'
 
 function invariant(condition: unknown, message: string): asserts condition {
   if (!condition) {
@@ -78,6 +79,30 @@ export function runMatchEngineSmokeTests(): void {
       (entry) => entry.skill === 'Docker',
     ),
     'Expected default output to expose Docker as a recommended skill to learn',
+  )
+  invariant(
+    strongDirectOutput.recommendedImprovements.length === 0,
+    'Expected strong direct match fixture to have no fallback improvement suggestions',
+  )
+
+  const combinedResult = buildCombinedResumeMatchResult(
+    strongDirectResult,
+    strongDirectOutput,
+    aiMatchFixture,
+  )
+  invariant(
+    combinedResult.comparison.scoreDifference > 0,
+    'Expected combined result to compare fallback and AI scores',
+  )
+  invariant(
+    combinedResult.combinedOutput.strengths.length >= strongDirectOutput.strengths.length,
+    'Expected combined output to preserve fallback strengths',
+  )
+  invariant(
+    combinedResult.combinedOutput.recommendedSkillsToLearn.some(
+      (entry) => entry.skill === 'Docker',
+    ),
+    'Expected combined output to expose recommended skills to learn',
   )
 
   const transferableFixture = getFixture('transferable-typescript-readiness')

@@ -1,4 +1,5 @@
 import type {
+  AiResumeMatchResult,
   CareerProfile,
   NormalizedJobPosting,
   ResumeProfile,
@@ -65,6 +66,45 @@ export const careerProfileFixture: CareerProfile = {
       name: 'Client portal prototype',
       summary: 'Built a React portal prototype with API integration.',
       skills: ['React', 'REST APIs'],
+    },
+  ],
+}
+
+export const aiMatchFixture: AiResumeMatchResult = {
+  overallScore: 76,
+  overallMatchLevel: 'promising',
+  confidence: 0.82,
+  strengths: [
+    {
+      label: 'TypeScript',
+      description: 'AI sees clear alignment between production TypeScript work and the role.',
+      priority: 'core',
+    },
+    {
+      label: 'React',
+      description: 'AI sees React project evidence as strongly relevant for frontend delivery.',
+      priority: 'core',
+    },
+  ],
+  weaknesses: [
+    {
+      label: 'Docker',
+      description: 'Docker is not yet strongly evidenced for this role.',
+      priority: 'nice_to_have',
+      severity: 'low',
+      type: 'learnable_gap',
+    },
+  ],
+  shortSummary:
+    'The candidate appears to be a promising fit with strong frontend alignment and one learnable infrastructure gap.',
+  recommendedImprovements: [
+    'Make infrastructure experience more visible in project bullets.',
+  ],
+  recommendedSkillsToLearn: [
+    {
+      skill: 'Docker',
+      reason: 'Docker would improve readiness for day-to-day development workflows.',
+      priority: 'medium',
     },
   ],
 }

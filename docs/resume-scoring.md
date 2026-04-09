@@ -201,6 +201,65 @@ Recommended flow:
 
 This keeps the feature testable and understandable while still allowing better explanations later.
 
+## Double scoring architecture
+
+The planned stronger setup is a double-scoring model:
+- deterministic fallback scoring
+- AI-based second scoring
+- deterministic comparison and combination layer
+
+The goal is not to replace the fallback engine. The goal is to use AI as a second perspective while keeping the final result controllable.
+
+Planned data flow:
+1. `CareerProfile` and normalized job data are prepared.
+2. The functional core produces `ResumeJobFitResult`.
+3. `buildDefaultMatchOutput(result)` produces the fallback frontend output.
+4. A future AI adapter produces `AiResumeMatchResult`.
+5. `buildCombinedResumeMatchResult(fallbackResult, fallbackOutput, aiResult)` compares both and creates the final combined frontend output.
+
+The combined result should contain:
+- fallback result
+- fallback output
+- AI result
+- comparison metadata
+- combined frontend output
+
+Comparison metadata should include:
+- fallback score
+- AI score
+- score difference
+- divergence level
+- review flag
+
+The final combined frontend output should include:
+- final score
+- score band
+- display tone
+- title
+- short summary
+- strengths
+- weaknesses
+- recommended improvements
+- recommended skills to learn
+
+Current implementation preparation:
+- Added `AiResumeMatchResult`, `MatchComparisonResult`, `CombinedResumeMatchOutput`, and `CombinedResumeMatchResult` in `packages/types/src/index.ts`
+- Added `buildCombinedResumeMatchResult` in `packages/match-engine/src/combined-match-result.ts`
+- Added a mock AI fixture in `packages/match-engine/src/fixtures.ts`
+- Added smoke checks for the combined result in `packages/match-engine/src/smoke-tests.ts`
+- Added `IAiMatchEvaluationPort` in `apps/web/src/ports/outbound/IAiMatchEvaluationPort.ts`
+- Added `PlaceholderAiMatchEvaluationAdapter` in `apps/web/src/adapters/llm/PlaceholderAiMatchEvaluationAdapter.ts`
+
+Current rule for the combined score:
+- fallback score remains the safer anchor
+- AI score can influence the final score when divergence is low or moderate
+- if divergence is high, the fallback score remains the final anchor
+- if knockout criteria block the role, the fallback score remains dominant
+
+This allows the frontend to show one combined result later while still preserving the fallback score as the safer control layer.
+
+Until a real model API is connected, the placeholder adapter acts as a deterministic mock second opinion. It keeps the architecture ready for a future OpenAI-style adapter without requiring an API key yet.
+
 What is intentionally not implemented yet:
 - resume PDF parsing
 - job scraping or ATS extraction

@@ -163,6 +163,7 @@ export function buildDefaultMatchOutput(
         type: weaknessTypeFromAssessment(assessment),
       }),
     ),
+    recommendedImprovements: result.resumeImprovementSuggestions,
     recommendedSkillsToLearn: learnableAssessments.map<RecommendedSkillItem>(
       (assessment) => ({
         skill: assessment.skill,
