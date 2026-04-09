@@ -100,7 +100,10 @@ function buildSkillLearningReason(assessment: RequirementAssessment): string {
 function buildShortSummary(result: ResumeJobFitResult): string {
   const strengthsText =
     result.strengths.length > 0
-      ? `Key strengths include ${result.strengths.slice(0, 2).join('; ')}.`
+      ? `Key strengths include ${result.strengths
+          .slice(0, 2)
+          .map((assessment) => assessment.reasoning)
+          .join('; ')}.`
       : 'The current resume does not show strong role-specific evidence yet.'
   const gapsText =
     result.criticalGaps.length > 0
@@ -145,15 +148,11 @@ export function buildDefaultMatchOutput(
     displayTone: toneFromScoreBand(result.scoreBand),
     title: titleFromResult(result),
     shortSummary: buildShortSummary(result),
-    strengths: result.requirementAssessments
-      .filter((assessment) =>
-        result.strengths.includes(assessment.reasoning),
-      )
-      .map((assessment) => ({
-        label: assessment.skill,
-        description: assessment.reasoning,
-        priority: assessment.priority,
-      })),
+    strengths: result.strengths.map((assessment) => ({
+      label: assessment.skill,
+      description: assessment.reasoning,
+      priority: assessment.priority,
+    })),
     weaknesses: [...missingAssessments, ...presentationGapAssessments].map(
       (assessment) => ({
         label: assessment.skill,

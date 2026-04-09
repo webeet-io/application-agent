@@ -79,6 +79,16 @@ importers:
         specifier: ^4.1.1
         version: 4.1.1(@types/node@25.5.0)(vite@8.0.2(@types/node@25.5.0)(jiti@2.6.1))
 
+  packages/match-engine:
+    dependencies:
+      '@ceevee/types':
+        specifier: workspace:*
+        version: link:../types
+    devDependencies:
+      vitest:
+        specifier: ^4.1.1
+        version: 4.1.1(@types/node@25.5.0)(vite@8.0.2(@types/node@25.5.0)(jiti@2.6.1))
+
   packages/types: {}
 
 packages:

@@ -10,6 +10,8 @@ import type {
 } from '@/ports/outbound/IAiMatchEvaluationPort'
 import type { AttemptResult } from '@ceevee/types'
 
+const PLACEHOLDER_CONFIDENCE = 0.45
+
 function clampScore(score: number): number {
   return Math.max(0, Math.min(Number(score.toFixed(1)), 100))
 }
@@ -98,7 +100,7 @@ export class PlaceholderAiMatchEvaluationAdapter
       value: {
         overallScore,
         overallMatchLevel: inferMatchLevel(overallScore),
-        confidence: 0.45,
+        confidence: PLACEHOLDER_CONFIDENCE,
         strengths: input.fallbackOutput.strengths,
         weaknesses: buildAiWeaknesses(input),
         shortSummary: buildAiSummary(input, overallScore),

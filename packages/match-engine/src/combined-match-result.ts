@@ -113,6 +113,7 @@ function combineScore(
     return fallbackResult.overallScore
   }
 
+  // The fallback score stays dominant because it is deterministic and easier to audit.
   const fallbackWeight = 0.7
   const aiWeight = 0.3
   return Number(

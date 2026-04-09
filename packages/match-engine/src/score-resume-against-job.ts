@@ -69,7 +69,6 @@ function buildSkillIndex(resume: ResumeProfile): Map<string, ResumeSkillEvidence
     const keys = unique([
       evidence.skill,
       ...(evidence.aliases ?? []),
-      ...(evidence.relatedSkills ?? []),
     ]).map(normalize)
 
     for (const key of keys) {
@@ -338,7 +337,9 @@ function deriveScoreBand(score: number): ScoreBand {
   return 'high'
 }
 
-function deriveStrengths(assessments: RequirementAssessment[]): string[] {
+function deriveStrengths(
+  assessments: RequirementAssessment[],
+): RequirementAssessment[] {
   return assessments
     .filter(
       (assessment) =>
@@ -347,7 +348,6 @@ function deriveStrengths(assessments: RequirementAssessment[]): string[] {
         assessment.confidence >= 0.55,
     )
     .slice(0, 5)
-    .map((assessment) => assessment.reasoning)
 }
 
 function deriveCriticalGaps(assessments: RequirementAssessment[]): string[] {
@@ -424,7 +424,10 @@ function buildReasoningSummary(
 ): string {
   const strengthsText =
     result.strengths.length > 0
-      ? `Key strengths: ${result.strengths.slice(0, 2).join('; ')}.`
+      ? `Key strengths: ${result.strengths
+          .slice(0, 2)
+          .map((assessment) => assessment.reasoning)
+          .join('; ')}.`
       : 'No strong supporting evidence was found yet.'
   const criticalGapsText =
     result.criticalGaps.length > 0

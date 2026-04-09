@@ -72,7 +72,7 @@ Implemented so far:
 - Added the pure scoring function `scoreResumeAgainstJob` in `packages/match-engine/src/score-resume-against-job.ts`
 - Added match-engine exports in `packages/match-engine/src/index.ts`
 - Added example resume/job scenarios in `packages/match-engine/src/fixtures.ts`
-- Added lightweight smoke-test checks in `packages/match-engine/src/smoke-tests.ts`
+- Added executable Vitest scenarios in `packages/match-engine/src/score-resume-against-job.test.ts`
 
 The match engine currently evaluates:
 - knockout criteria such as required languages, location constraints, seniority mismatch, and missing critical technologies
@@ -158,7 +158,7 @@ Implemented preparation:
 - Added `CareerProfile` and related types in `packages/types/src/index.ts`
 - Added `careerProfileToResumeProfile` in `packages/match-engine/src/career-profile-to-resume-profile.ts`
 - Added a CareerProfile fixture in `packages/match-engine/src/fixtures.ts`
-- Added smoke checks for the mapping in `packages/match-engine/src/smoke-tests.ts`
+- Added test coverage for the mapping in `packages/match-engine/src/score-resume-against-job.test.ts`
 
 ## Core scoring vs AI adapter
 
@@ -246,7 +246,7 @@ Current implementation preparation:
 - Added `AiResumeMatchResult`, `MatchComparisonResult`, `CombinedResumeMatchOutput`, and `CombinedResumeMatchResult` in `packages/types/src/index.ts`
 - Added `buildCombinedResumeMatchResult` in `packages/match-engine/src/combined-match-result.ts`
 - Added a mock AI fixture in `packages/match-engine/src/fixtures.ts`
-- Added smoke checks for the combined result in `packages/match-engine/src/smoke-tests.ts`
+- Added test coverage for the combined result in `packages/match-engine/src/score-resume-against-job.test.ts`
 - Added `IAiMatchEvaluationPort` in `apps/web/src/ports/outbound/IAiMatchEvaluationPort.ts`
 - Added `PlaceholderAiMatchEvaluationAdapter` in `apps/web/src/adapters/llm/PlaceholderAiMatchEvaluationAdapter.ts`
 

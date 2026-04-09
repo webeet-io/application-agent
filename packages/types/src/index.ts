@@ -227,7 +227,7 @@ export interface ResumeJobFitResult {
   knockout: KnockoutAssessment
   seniorityFit: SeniorityFit
   evidenceQuality: EvidenceQuality
-  strengths: string[]
+  strengths: RequirementAssessment[]
   criticalGaps: string[]
   learnableGaps: string[]
   reasoningSummary: string
@@ -284,17 +284,7 @@ export interface MatchComparisonResult {
   reviewFlag: boolean
 }
 
-export interface CombinedResumeMatchOutput {
-  overallScore: number
-  scoreBand: ScoreBand
-  displayTone: MatchDisplayTone
-  title: string
-  shortSummary: string
-  strengths: MatchOutputItem[]
-  weaknesses: MatchWeaknessItem[]
-  recommendedImprovements: string[]
-  recommendedSkillsToLearn: RecommendedSkillItem[]
-}
+export type CombinedResumeMatchOutput = DefaultResumeMatchOutput
 
 export interface CombinedResumeMatchResult {
   fallbackResult: ResumeJobFitResult
