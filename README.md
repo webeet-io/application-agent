@@ -90,6 +90,37 @@ OPENAI_API_KEY=sk-...
 OPENAI_CHAT_MODEL=gpt-4.1-mini
 ```
 
+### Local Google Auth Setup
+
+The login flow in this project uses Google OAuth.
+
+If you want Google sign-in to work in local development with Docker Supabase, you must configure a Google OAuth client and expose the credentials to the local Supabase Auth service.
+
+Add these variables to the root `.env.local` file:
+
+```env
+SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID=your_google_client_id
+SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET=your_google_client_secret
+```
+
+In Google Cloud Console, configure the OAuth client with:
+
+- Authorized JavaScript origin: `http://localhost:3000`
+- Authorized redirect URI: `http://127.0.0.1:54321/auth/v1/callback`
+
+Why the redirect URI points to port `54321`:
+
+- Google redirects back to the local Supabase Auth service first
+- Supabase then completes the OAuth exchange
+- Supabase redirects the browser back to the app at `/auth/callback`
+
+After adding the Google client credentials, restart the local stack so Supabase Auth can pick them up:
+
+```bash
+supabase stop --no-backup
+pnpm dev:stack
+```
+
 What each file should contain:
 
 - `.env`
