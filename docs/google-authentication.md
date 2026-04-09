@@ -121,6 +121,24 @@ Use these values for local development:
 - Authorized redirect URI:
   `http://127.0.0.1:54321/auth/v1/callback`
 
+### What `54321` Actually Is
+
+`54321` is the local Supabase API/Auth port exposed by the Supabase CLI development stack.
+
+It is not a Google-specific port and it is not an AWS endpoint.
+
+In local development, Supabase runs multiple services on fixed local ports. In this project:
+
+- `http://127.0.0.1:54321` is the local Supabase API/Auth entrypoint
+- `http://127.0.0.1:54323` is Supabase Studio
+- `http://127.0.0.1:54324` is the local email testing UI
+
+That is why Google must redirect to:
+
+- `http://127.0.0.1:54321/auth/v1/callback`
+
+Google returns the user to Supabase first, not directly to Next.js.
+
 ### Important Note About the App Name
 
 The app name shown on the Google consent screen comes from the Google project's branding / consent screen configuration, not from the env variable names and not from the Supabase config.
@@ -204,6 +222,11 @@ Google must return to Supabase first because Supabase is responsible for:
 After Supabase completes that work, it redirects the browser to the app callback:
 
 - `http://localhost:3000/auth/callback`
+
+In short:
+
+- Google -> Supabase on `127.0.0.1:54321`
+- Supabase -> CeeVee on `localhost:3000`
 
 ## App Callback Behavior
 
@@ -345,48 +368,18 @@ Examples:
 
 Usually restarting `Next.js` is enough, and in many cases hot reload already covers it.
 
-## Key Rotation
+### If You Change the Google Client ID or Secret
 
-### What Rotation Means Here
+This project does not need a large key-rotation process document for Google sign-in alone.
 
-Rotation means replacing:
+Operationally, the rule is simple:
 
-- `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID`
-- `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET`
+1. update the values in `.env.local` or in the deployment environment
+2. restart Supabase Auth or restart the deployment environment
 
-with values from a new or updated Google OAuth client.
+Changing the Google OAuth client credentials does not by itself require a database migration.
 
-### What to Do During Rotation
-
-1. create or update the Google OAuth client in Google Cloud Console
-2. ensure the correct `Branding` / consent screen name is set
-3. ensure the correct redirect URI is configured
-4. replace the values in the environment
-5. restart Supabase Auth
-
-### What Changes After Rotation
-
-- new login attempts use the new Google OAuth client
-- the consent screen branding shown to users may change
-- old browser sessions may still remain valid until they are explicitly cleared or expire
-
-### What Usually Does Not Happen
-
-Changing the Google OAuth client does not normally rewrite existing user rows in `auth.users` by itself.
-
-The database user records remain, but future logins use the new provider credentials.
-
-### Operational Guidance
-
-For local development:
-
-- update `.env.local`
-- restart Supabase
-
-For hosted environments:
-
-- update the deployment environment variables
-- redeploy or restart the service environment as required by the platform
+Existing users remain in `auth.users`. Future sign-ins simply use the new Google OAuth client configuration.
 
 ## Local vs Hosted Environments
 
