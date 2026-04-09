@@ -18,6 +18,10 @@ export class CareerPageAdapter implements ICareerPagePort {
       return fetchLeverJobs(url)
     }
 
+    if (detectedProvider === 'ashby') {
+      return fetchAshbyJobs(url)
+    }
+
     if (detectedProvider === 'unknown') {
       return fetchGenericJobs(url)
     }
@@ -114,6 +118,75 @@ async function fetchLeverJobs(url: string): Promise<AttemptResult<CareerPageErro
       jobs,
       atsProvider: 'lever',
     },
+  }
+}
+
+async function fetchAshbyJobs(url: string): Promise<AttemptResult<CareerPageError, CareerPageResult>> {
+  const slug = extractAshbySlug(url)
+  if (!slug) {
+    return { success: false, error: { type: 'parse_failed', raw: 'Unable to resolve Ashby organization slug.' }, value: null }
+  }
+
+  // Ashby exposes a public posting list API — no auth required.
+  // POST with the organization slug, returns a results array of job postings.
+  const apiUrl = 'https://api.ashbyhq.com/posting.list'
+  let response: Response
+  try {
+    response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ organizationHostedJobsPageName: slug }),
+      redirect: 'follow',
+    })
+  } catch (error) {
+    return {
+      success: false,
+      error: { type: 'fetch_failed', url: apiUrl, message: error instanceof Error ? error.message : 'network error' },
+      value: null,
+    }
+  }
+
+  if (!response.ok) {
+    return { success: false, error: { type: 'fetch_failed', url: apiUrl, message: `HTTP ${response.status}` }, value: null }
+  }
+
+  let data: JsonValue
+  try {
+    data = (await response.json()) as JsonValue
+  } catch (error) {
+    return {
+      success: false,
+      error: { type: 'parse_failed', raw: error instanceof Error ? error.message : 'invalid json' },
+      value: null,
+    }
+  }
+
+  const results = Array.isArray((data as JsonObject).results) ? ((data as JsonObject).results as JsonValue[]) : []
+  const jobs: JobListing[] = results
+    .map((item) => {
+      const obj = item as JsonObject
+      const locationObj = obj.location as JsonObject | undefined
+      return {
+        title: readString(obj.title) || 'Untitled role',
+        location: readString(locationObj?.locationStr ?? locationObj?.name ?? obj.locationName) || 'Unknown',
+        url: readString(obj.jobUrl ?? obj.applyUrl) || '',
+        description: readString(obj.descriptionHtml ?? obj.description) || '',
+      }
+    })
+    .filter((job) => job.title !== 'Untitled role' || job.url !== '')
+
+  return { success: true, error: null, value: { jobs, atsProvider: 'ashby' } }
+}
+
+function extractAshbySlug(url: string): string | null {
+  try {
+    const parsed = new URL(url)
+    if (!parsed.hostname.toLowerCase().includes('ashbyhq.com')) return null
+    // jobs.ashbyhq.com/{slug} — slug is the first path segment
+    const pathParts = parsed.pathname.split('/').filter(Boolean)
+    return pathParts[0] ?? null
+  } catch {
+    return null
   }
 }
 
