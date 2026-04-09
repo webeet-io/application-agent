@@ -6,6 +6,7 @@
 
 ## Development
 - `docs/PULL_REQUEST_GUIDE.md`
+- `docs/local-database.md` — local Supabase setup (Docker), start/stop/seed
 
 ## Features
 - `docs/features/INDEX.md`
