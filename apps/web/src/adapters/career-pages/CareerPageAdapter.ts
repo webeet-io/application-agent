@@ -26,6 +26,16 @@ export class CareerPageAdapter implements ICareerPagePort {
       return fetchPersonioJobs(url)
     }
 
+    // Workday, Softgarden, and dvinci have no stable public JSON API for MVP.
+    // Workday is fully JS-rendered — a plain fetch returns a shell page with no job data.
+    // Softgarden and dvinci have no documented public endpoints.
+    // Best-effort: fall through to the generic JSON-LD scraper, which works for any
+    // company that embeds structured data. Returns an empty list (not an error) if none found.
+    // Full support for these providers requires a headless browser — tracked as a follow-up.
+    if (detectedProvider === 'workday' || detectedProvider === 'softgarden' || detectedProvider === 'dvinci') {
+      return fetchGenericJobs(url)
+    }
+
     if (detectedProvider === 'unknown') {
       return fetchGenericJobs(url)
     }
