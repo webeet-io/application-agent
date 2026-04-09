@@ -4,10 +4,11 @@
   "version": "0.0.0",
   "packageManager": "pnpm@10.32.1",
   "scripts": {
-    "dev": "pnpm --filter web dev",
-    "build": "pnpm --filter web build",
-    "lint": "pnpm -r lint",
-    "typecheck": "pnpm -r typecheck",
+    "dev": "bash scripts/with-root-env.sh pnpm --filter web dev",
+    "dev:stack": "bash scripts/start-dev.sh",
+    "build": "bash scripts/with-root-env.sh pnpm --filter web build",
+    "lint": "bash scripts/with-root-env.sh pnpm -r lint",
+    "typecheck": "bash scripts/with-root-env.sh pnpm -r typecheck",
     "format": "prettier --write \"**/*.{ts,tsx,json,md}\""
   },
   "devDependencies": {
