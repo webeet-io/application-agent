@@ -96,14 +96,21 @@ The login flow in this project uses Google OAuth.
 
 If you want Google sign-in to work in local development with Docker Supabase, you must configure a Google OAuth client and expose the credentials to the local Supabase Auth service.
 
-Add these variables to the root `.env.local` file:
+#### 1. Create a Google OAuth client
 
-```env
-SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID=your_google_client_id
-SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET=your_google_client_secret
-```
+In Google Cloud Console:
 
-In Google Cloud Console, configure the OAuth client with:
+1. Open or create the Google Cloud project you want to use for this app
+2. Open `Google Auth Platform`
+3. Open `Branding`
+4. Set the app name that users should see during sign-in, for example `CeeVee`
+5. Open `Clients`
+6. Create a new client
+7. Choose application type: `Web application`
+
+#### 2. Configure the OAuth client URLs
+
+When creating the Google OAuth client, configure:
 
 - Authorized JavaScript origin: `http://localhost:3000`
 - Authorized redirect URI: `http://127.0.0.1:54321/auth/v1/callback`
@@ -111,8 +118,26 @@ In Google Cloud Console, configure the OAuth client with:
 Why the redirect URI points to port `54321`:
 
 - Google redirects back to the local Supabase Auth service first
-- Supabase then completes the OAuth exchange
-- Supabase redirects the browser back to the app at `/auth/callback`
+- Supabase completes the OAuth exchange
+- Supabase then redirects the browser back to the app at `/auth/callback`
+
+#### 3. Copy the client credentials into `.env.local`
+
+After creating the client, Google will show:
+
+- Client ID
+- Client Secret
+
+Copy those values into the root `.env.local` file:
+
+```env
+SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID=your_google_client_id
+SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET=your_google_client_secret
+```
+
+These variables are read by the local Supabase Auth service through `supabase/config.toml`.
+
+#### 4. Restart the local stack
 
 After adding the Google client credentials, restart the local stack so Supabase Auth can pick them up:
 
@@ -120,6 +145,18 @@ After adding the Google client credentials, restart the local stack so Supabase 
 supabase stop --no-backup
 pnpm dev:stack
 ```
+
+#### 5. Verify the login flow
+
+Open:
+
+- `http://localhost:3000/login`
+
+Then click:
+
+- `Continue with Google`
+
+If Google sign-in opens but shows the wrong app name, check the `Branding` page in Google Cloud Console. The name shown to users comes from the Google OAuth consent screen, not from the env variable names.
 
 What each file should contain:
 
