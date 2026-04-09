@@ -1,11 +1,18 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
-export function LoginForm() {
+export function LoginForm({ initialError }: { initialError?: string | null }) {
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle')
-  const [message, setMessage] = useState<string | null>(null)
+  const [message, setMessage] = useState<string | null>(initialError ?? null)
+
+  useEffect(() => {
+    setMessage(initialError ?? null)
+    if (initialError) {
+      setStatus('error')
+    }
+  }, [initialError])
 
   async function handleGoogleSignIn() {
     setStatus('loading')
