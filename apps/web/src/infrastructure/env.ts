@@ -9,6 +9,7 @@ function requireEnv(key: string): string {
 export const env = {
   openai: {
     apiKey: () => requireEnv('OPENAI_API_KEY'),
+    chatModel: () => process.env.OPENAI_CHAT_MODEL ?? 'gpt-4.1-mini',
   },
   supabase: {
     url: () => requireEnv('NEXT_PUBLIC_SUPABASE_URL'),

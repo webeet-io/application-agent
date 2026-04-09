@@ -1,1 +1,17 @@
-@import "tailwindcss";
+@import 'tailwindcss';
+
+html {
+  min-height: 100%;
+  background:
+    radial-gradient(circle at top left, rgba(201, 109, 66, 0.2), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(127, 166, 156, 0.25), transparent 24%),
+    #f4efe8;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  color: #221914;
+  background: transparent;
+  font-family: Georgia, 'Times New Roman', serif;
+}
