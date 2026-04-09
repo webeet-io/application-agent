@@ -1,7 +1,0 @@
-{
-  "mcpServers": {
-    "hf-mcp-server": {
-      "url": "https://huggingface.co/mcp?login"
-    }
-  }
-}
