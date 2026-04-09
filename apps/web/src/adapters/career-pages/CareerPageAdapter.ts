@@ -22,6 +22,10 @@ export class CareerPageAdapter implements ICareerPagePort {
       return fetchAshbyJobs(url)
     }
 
+    if (detectedProvider === 'personio') {
+      return fetchPersonioJobs(url)
+    }
+
     if (detectedProvider === 'unknown') {
       return fetchGenericJobs(url)
     }
@@ -188,6 +192,92 @@ function extractAshbySlug(url: string): string | null {
   } catch {
     return null
   }
+}
+
+async function fetchPersonioJobs(url: string): Promise<AttemptResult<CareerPageError, CareerPageResult>> {
+  const slug = extractPersonioSlug(url)
+  if (!slug) {
+    return { success: false, error: { type: 'parse_failed', raw: 'Unable to resolve Personio company slug.' }, value: null }
+  }
+
+  // Personio exposes a public XML feed — no auth required.
+  // Try .de first (more common in German market), fall back to .com.
+  const xmlUrls = [
+    `https://${slug}.jobs.personio.de/xml`,
+    `https://${slug}.jobs.personio.com/xml`,
+  ]
+
+  let xmlText: string | null = null
+  let lastFetchError: CareerPageError | null = null
+
+  for (const xmlUrl of xmlUrls) {
+    const result = await fetchText(xmlUrl)
+    if (result.success) {
+      xmlText = result.value
+      break
+    }
+    lastFetchError = result.error
+  }
+
+  if (!xmlText) {
+    return {
+      success: false,
+      error: lastFetchError ?? { type: 'fetch_failed', url, message: 'All Personio XML endpoints failed' },
+      value: null,
+    }
+  }
+
+  const jobs = parsePersonioXml(xmlText)
+  return { success: true, error: null, value: { jobs, atsProvider: 'personio' } }
+}
+
+function extractPersonioSlug(url: string): string | null {
+  try {
+    const host = new URL(url).hostname.toLowerCase()
+    // Pattern: {slug}.jobs.personio.de or {slug}.jobs.personio.com
+    const match = host.match(/^([^.]+)\.jobs\.personio/)
+    return match?.[1] ?? null
+  } catch {
+    return null
+  }
+}
+
+function parsePersonioXml(xml: string): JobListing[] {
+  const jobs: JobListing[] = []
+  const positionRegex = /<position>([\s\S]*?)<\/position>/gi
+  let match: RegExpExecArray | null
+
+  while ((match = positionRegex.exec(xml))) {
+    const block = match[1]
+    const title = extractXmlTag(block, 'name')
+    const location = extractXmlTag(block, 'office') || extractXmlTag(block, 'department')
+    const url = extractXmlTag(block, 'url')
+    const description = extractXmlTag(block, 'jobDescription') || extractXmlTag(block, 'description')
+
+    if (!title && !url) continue
+
+    jobs.push({
+      title: title || 'Untitled role',
+      location: location || 'Unknown',
+      url,
+      description,
+    })
+  }
+
+  return jobs
+}
+
+// Minimal XML tag extractor — no external dependency needed for Personio's predictable structure.
+// Strips CDATA wrappers and HTML tags to return plain text content.
+function extractXmlTag(xml: string, tag: string): string {
+  const regex = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i')
+  const match = regex.exec(xml)
+  if (!match) return ''
+  return match[1]
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 async function fetchGenericJobs(url: string): Promise<AttemptResult<CareerPageError, CareerPageResult>> {
