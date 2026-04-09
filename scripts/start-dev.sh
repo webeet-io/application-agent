@@ -55,8 +55,13 @@ print_urls() {
   fi
 
   echo
-  echo "Stop with Ctrl+C"
+  echo "Supabase Studio: http://127.0.0.1:54323"
+  echo
+  echo "Stop with Ctrl+C  (run 'pnpm db:stop' to also stop the database)"
 }
+
+echo "Starting local Supabase stack..."
+supabase start --workdir "${ROOT_DIR}"
 
 print_urls
 

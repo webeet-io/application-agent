@@ -3,9 +3,10 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-ENV_FILE="${ROOT_DIR}/.env"
 
-if [[ -f "${ENV_FILE}" ]]; then
+load_env_file() {
+  local file="$1"
+  [[ -f "${file}" ]] || return 0
   while IFS= read -r line || [[ -n "${line}" ]]; do
     [[ -z "${line}" || "${line}" =~ ^[[:space:]]*# ]] && continue
 
@@ -27,8 +28,12 @@ if [[ -f "${ENV_FILE}" ]]; then
     fi
 
     export "${key}=${value}"
-  done < "${ENV_FILE}"
-fi
+  done < "${file}"
+}
+
+# Load base env, then local overrides (.env.local wins)
+load_env_file "${ROOT_DIR}/.env"
+load_env_file "${ROOT_DIR}/.env.local"
 
 cd "${ROOT_DIR}"
 exec "$@"
