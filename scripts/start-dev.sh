@@ -55,7 +55,23 @@ print_urls() {
   fi
 
   echo
-  echo "Stop with Ctrl+C"
+  echo "Supabase Studio: http://127.0.0.1:54323"
+  echo
+  echo "Stop with Ctrl+C  (run 'pnpm db:stop' to also stop the database)"
+}
+
+echo "Starting local Supabase stack..."
+start_output=$(supabase start --workdir "${ROOT_DIR}" 2>&1) || {
+  # Port conflict: Supabase CLI tells us exactly which project to stop
+  conflicting=$(echo "${start_output}" | grep -o 'supabase stop --project-id [^ ]*' | awk '{print $NF}')
+  if [[ -n "${conflicting}" ]]; then
+    echo "Port conflict with project '${conflicting}' — stopping it first..."
+    supabase stop --project-id "${conflicting}"
+    supabase start --workdir "${ROOT_DIR}"
+  else
+    echo "${start_output}" >&2
+    exit 1
+  fi
 }
 
 print_urls

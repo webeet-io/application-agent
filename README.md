@@ -1,4 +1,4 @@
-# Application Agent (CeeVee)
+# CeeVee (Application Agent)
 
 CeeVee is a smart job opportunity agent that discovers companies, scrapes career pages, and matches roles to resumes.
 
