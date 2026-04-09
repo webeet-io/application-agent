@@ -18,5 +18,5 @@ export type CareerPageError =
   | { type: 'parse_failed'; raw: string }
 
 export interface ICareerPagePort {
-  fetchJobs(url: string): Promise<AttemptResult<CareerPageError, CareerPageResult>>
+  fetchJobs(url: string, provider?: ATSProvider): Promise<AttemptResult<CareerPageError, CareerPageResult>>
 }
