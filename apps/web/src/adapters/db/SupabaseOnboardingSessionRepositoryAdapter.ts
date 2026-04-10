@@ -165,4 +165,69 @@ export class SupabaseOnboardingSessionRepositoryAdapter implements IOnboardingSe
 
     return { success: true, error: null, value: toOnboardingSession(data) }
   }
+
+  async saveProfileDraft(input: {
+    sessionId: string
+    profileDraft: OnboardingSession['profileDraft']
+    currentStep?: OnboardingStep
+  }): Promise<AttemptResult<OnboardingSessionRepositoryError, OnboardingSession>> {
+    const nextValues = {
+      profile_draft_json: input.profileDraft,
+      updated_at: new Date().toISOString(),
+      ...(input.currentStep ? { current_step: input.currentStep } : {}),
+    }
+
+    const { data, error } = await this.client
+      .from('onboarding_sessions')
+      .update(nextValues)
+      .eq('id', input.sessionId)
+      .select('*')
+      .maybeSingle<OnboardingSessionRow>()
+
+    if (error) {
+      return { success: false, error: { type: 'db_error', message: error.message }, value: null }
+    }
+
+    if (!data) {
+      return {
+        success: false,
+        error: { type: 'not_found', sessionId: input.sessionId },
+        value: null,
+      }
+    }
+
+    return { success: true, error: null, value: toOnboardingSession(data) }
+  }
+
+  async complete(input: {
+    sessionId: string
+    profileDraft?: OnboardingSession['profileDraft']
+  }): Promise<AttemptResult<OnboardingSessionRepositoryError, OnboardingSession>> {
+    const { data, error } = await this.client
+      .from('onboarding_sessions')
+      .update({
+        status: 'completed',
+        current_step: 'completed',
+        profile_draft_json: input.profileDraft,
+        completed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', input.sessionId)
+      .select('*')
+      .maybeSingle<OnboardingSessionRow>()
+
+    if (error) {
+      return { success: false, error: { type: 'db_error', message: error.message }, value: null }
+    }
+
+    if (!data) {
+      return {
+        success: false,
+        error: { type: 'not_found', sessionId: input.sessionId },
+        value: null,
+      }
+    }
+
+    return { success: true, error: null, value: toOnboardingSession(data) }
+  }
 }

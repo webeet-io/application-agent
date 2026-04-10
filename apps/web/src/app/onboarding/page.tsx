@@ -1,9 +1,11 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+import { buildOnboardingCompletionPreview } from '@/domain/onboarding-profile'
 import {
   listOnboardingChatMessagesUseCase,
   resolveUserOnboardingStateUseCase,
 } from '@/infrastructure/container'
+import { OnboardingCompletionActions } from '@/modules/onboarding/components/onboarding-completion-actions'
 import { OnboardingEntryActions } from '@/modules/onboarding/components/onboarding-entry-actions'
 import { OnboardingGuidedChat } from '@/modules/onboarding/components/onboarding-guided-chat'
 import { WorkspaceShell } from '@/modules/workspace/components/workspace-shell'
@@ -49,9 +51,10 @@ export default async function OnboardingPage() {
 
   const isInProgress = onboardingStateResult.value.status === 'onboarding_in_progress'
   const activeSession = onboardingStateResult.value.activeSession
-  const shouldShowGuidedChat = activeSession?.currentStep === 'guided_chat'
+  const shouldShowGuidedChat =
+    activeSession?.currentStep === 'guided_chat' || activeSession?.currentStep === 'review'
   const onboardingMessagesResult =
-    activeSession && shouldShowGuidedChat
+    activeSession
       ? await listOnboardingChatMessagesUseCase.execute({
           userId: userContext.userId,
           sessionId: activeSession.id,
@@ -61,6 +64,15 @@ export default async function OnboardingPage() {
   if (onboardingMessagesResult && !onboardingMessagesResult.success) {
     throw new Error(onboardingMessagesResult.error.message)
   }
+
+  const completionPreview =
+    activeSession && onboardingMessagesResult
+      ? buildOnboardingCompletionPreview({
+          userId: userContext.userId,
+          session: activeSession,
+          messages: onboardingMessagesResult.value,
+        })
+      : null
 
   return (
     <WorkspaceShell
@@ -137,8 +149,8 @@ export default async function OnboardingPage() {
             and anything still missing after resume parsing.
           </p>
           <div className="rounded-[22px] border border-[rgba(58,44,33,0.08)] bg-[rgba(255,255,255,0.74)] px-4 py-4 text-[0.95rem] leading-[1.65] text-[#594b41]">
-            Each user message and assistant reply should later be saved inside an onboarding chat
-            table, separate from the generic workspace chat.
+            Each user message and assistant reply is now persisted in the dedicated onboarding chat
+            flow, separate from the generic workspace chat.
           </div>
         </article>
 
@@ -153,10 +165,17 @@ export default async function OnboardingPage() {
             Once enough information is gathered, the flow can finalize a draft career profile and
             send the user to opportunities.
           </p>
-          <div className="flex flex-wrap gap-3">
-            <ActionLink href="/career-profile" label="Review profile area" tone="secondary" />
-            <ActionLink href="/opportunities" label="Continue to opportunities" tone="primary" />
-          </div>
+          {activeSession && completionPreview ? (
+            <OnboardingCompletionActions
+              sessionId={activeSession.id}
+              preview={completionPreview}
+            />
+          ) : (
+            <div className="flex flex-wrap gap-3">
+              <ActionLink href="/career-profile" label="Review profile area" tone="secondary" />
+              <ActionLink href="/opportunities" label="Continue to opportunities" tone="primary" />
+            </div>
+          )}
         </article>
       </section>
 

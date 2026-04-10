@@ -12,6 +12,7 @@ import { AdvanceOnboardingChatUseCase } from '@/application/AdvanceOnboardingCha
 import { AttachResumeToOnboardingSessionUseCase } from '@/application/AttachResumeToOnboardingSessionUseCase'
 import { AskChatUseCase } from '@/application/AskChatUseCase'
 import { CareerPageAdapter } from '@/adapters/career-pages/CareerPageAdapter'
+import { CompleteOnboardingUseCase } from '@/application/CompleteOnboardingUseCase'
 import { ListOnboardingChatMessagesUseCase } from '@/application/ListOnboardingChatMessagesUseCase'
 import { ResolveUserOnboardingStateUseCase } from '@/application/ResolveUserOnboardingStateUseCase'
 import { StartOrResumeOnboardingSessionUseCase } from '@/application/StartOrResumeOnboardingSessionUseCase'
@@ -136,3 +137,24 @@ export const advanceOnboardingChatUseCase = lazyExecute((() => {
     onboardingAssistant,
   )
 }) satisfies () => AdvanceOnboardingChatUseCase)
+
+export const completeOnboardingUseCase = lazyExecute((() => {
+  const onboardingSessions = new SupabaseOnboardingSessionRepositoryAdapter(
+    env.supabase.url(),
+    env.supabase.serviceRoleKey(),
+  )
+  const onboardingMessages = new SupabaseOnboardingChatMessageRepositoryAdapter(
+    env.supabase.url(),
+    env.supabase.serviceRoleKey(),
+  )
+  const careerProfiles = new SupabaseCareerProfileRepositoryAdapter(
+    env.supabase.url(),
+    env.supabase.serviceRoleKey(),
+  )
+
+  return new CompleteOnboardingUseCase(
+    onboardingSessions,
+    onboardingMessages,
+    careerProfiles,
+  )
+}) satisfies () => CompleteOnboardingUseCase)

@@ -6,6 +6,7 @@ import type {
 } from '@ceevee/types'
 import type {
   IOnboardingAssistantPort,
+  OnboardingAssistantMessage,
 } from '@/ports/outbound/IOnboardingAssistantPort'
 import type {
   IOnboardingChatMessageRepositoryPort,
@@ -180,12 +181,19 @@ export class AdvanceOnboardingChatUseCase {
       updatedMessages.push(userMessageResult.value)
     }
 
-    const assistantInputMessages = updatedMessages
-      .filter((message) => message.role === 'assistant' || message.role === 'user')
-      .map((message) => ({
-        role: message.role,
-        content: message.content,
-      }))
+    const assistantInputMessages: OnboardingAssistantMessage[] = updatedMessages
+      .flatMap((message) => {
+        if (message.role !== 'assistant' && message.role !== 'user') {
+          return []
+        }
+
+        return [
+          {
+            role: message.role,
+            content: message.content,
+          },
+        ]
+      })
 
     const assistantReplyResult = await this.assistant.reply({
       session,

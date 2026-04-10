@@ -79,4 +79,36 @@ export class SupabaseCareerProfileRepositoryAdapter implements ICareerProfileRep
 
     return { success: true, error: null, value: toPersistedCareerProfile(data) }
   }
+
+  async upsertForUser(input: {
+    userId: string
+    status: CareerProfileStatus
+    profile: CareerProfile
+    sourceResumeId: ResumeId | null
+    onboardingSessionId: OnboardingSessionId | null
+    completenessScore: number
+  }): Promise<AttemptResult<CareerProfileRepositoryError, PersistedCareerProfile>> {
+    const { data, error } = await this.client
+      .from('career_profiles')
+      .upsert(
+        {
+          user_id: input.userId,
+          status: input.status,
+          profile_json: input.profile,
+          source_resume_id: input.sourceResumeId,
+          onboarding_session_id: input.onboardingSessionId,
+          completeness_score: input.completenessScore,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'user_id' },
+      )
+      .select('*')
+      .single<CareerProfileRow>()
+
+    if (error) {
+      return { success: false, error: { type: 'db_error', message: error.message }, value: null }
+    }
+
+    return { success: true, error: null, value: toPersistedCareerProfile(data) }
+  }
 }

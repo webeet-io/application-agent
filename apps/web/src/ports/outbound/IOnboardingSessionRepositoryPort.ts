@@ -22,4 +22,13 @@ export interface IOnboardingSessionRepositoryPort {
     resumeText?: string | null
     nextStep?: OnboardingStep
   }): Promise<AttemptResult<OnboardingSessionRepositoryError, OnboardingSession>>
+  saveProfileDraft(input: {
+    sessionId: string
+    profileDraft: OnboardingSession['profileDraft']
+    currentStep?: OnboardingStep
+  }): Promise<AttemptResult<OnboardingSessionRepositoryError, OnboardingSession>>
+  complete(input: {
+    sessionId: string
+    profileDraft?: OnboardingSession['profileDraft']
+  }): Promise<AttemptResult<OnboardingSessionRepositoryError, OnboardingSession>>
 }

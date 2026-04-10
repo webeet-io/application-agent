@@ -25,6 +25,9 @@ export default async function CareerProfilePage() {
   }
 
   const persistedProfile = onboardingStateResult.value.careerProfile
+  const profile = persistedProfile?.profile
+  const targetRoles = profile?.preferences?.targetRoles ?? []
+  const detectedSkills = profile?.skillEvidence.slice(0, 6) ?? []
 
   return (
     <WorkspaceShell
@@ -62,15 +65,29 @@ export default async function CareerProfilePage() {
           />
           <ProfileField
             label="Identity"
-            description="Target roles, seniority, locations, and language preferences will live here as stable profile data."
+            description={
+              profile
+                ? `Seniority: ${profile.seniority}. Languages: ${profile.languages.length > 0 ? profile.languages.join(', ') : 'not detected yet'}.`
+                : 'Target roles, seniority, locations, and language preferences will live here as stable profile data.'
+            }
           />
           <ProfileField
             label="Evidence"
-            description="Skills, work history, projects, education, and volunteer experience should be merged from resume parsing and onboarding answers."
+            description={
+              profile
+                ? detectedSkills.length > 0
+                  ? `Detected skill signals: ${detectedSkills.map((skill) => skill.skill).join(', ')}.`
+                  : 'A profile exists already, but concrete skill evidence still needs to be enriched.'
+                : 'Skills, work history, projects, education, and volunteer experience should be merged from resume parsing and onboarding answers.'
+            }
           />
           <ProfileField
             label="Readiness"
-            description="This page can later show how complete the profile is before sending the user deeper into opportunities and scoring."
+            description={
+              persistedProfile
+                ? `The latest persisted profile is marked ready with ${persistedProfile.completenessScore}% completeness.`
+                : 'This page can later show how complete the profile is before sending the user deeper into opportunities and scoring.'
+            }
           />
         </div>
 
@@ -83,10 +100,21 @@ export default async function CareerProfilePage() {
               The profile should be more durable than one CV.
             </h2>
           </div>
-          <p className="m-0 text-[0.98rem] leading-[1.7] text-[#594b41]">
-            The onboarding flow can fill a draft first, but this page gives the product a long-term
-            destination where users later review, improve, and expand their career data.
-          </p>
+          {profile ? (
+            <div className="grid gap-3">
+              <div className="rounded-[22px] border border-[rgba(58,44,33,0.08)] bg-[rgba(255,255,255,0.74)] px-4 py-4 text-[0.98rem] leading-[1.65] text-[#594b41]">
+                Target roles: {targetRoles.length > 0 ? targetRoles.join(', ') : 'not captured yet'}
+              </div>
+              <div className="rounded-[22px] border border-[rgba(58,44,33,0.08)] bg-[rgba(255,255,255,0.74)] px-4 py-4 text-[0.98rem] leading-[1.65] text-[#594b41]">
+                Additional notes: {profile.additionalNotes ?? 'No onboarding notes were persisted yet.'}
+              </div>
+            </div>
+          ) : (
+            <p className="m-0 text-[0.98rem] leading-[1.7] text-[#594b41]">
+              The onboarding flow can fill a draft first, but this page gives the product a long-term
+              destination where users later review, improve, and expand their career data.
+            </p>
+          )}
         </div>
       </section>
     </WorkspaceShell>
