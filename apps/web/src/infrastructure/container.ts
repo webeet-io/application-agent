@@ -13,18 +13,44 @@ import { FetchCareerPageJobsUseCase } from '@/application/FetchCareerPageJobsUse
 import { UploadResumeUseCase } from '@/application/UploadResumeUseCase'
 import { env } from './env'
 
-// Adapters
-const companyDiscovery = new OpenAICompanyDiscoveryAdapter(env.openai.apiKey())
-const chatAssistant = new OpenAIChatAssistantAdapter(
-  env.openai.apiKey(),
-  env.openai.chatModel(),
-)
-const careerPages = new CareerPageAdapter()
-const resumeRepository = new SupabaseResumeRepositoryAdapter(env.supabase.url(), env.supabase.serviceRoleKey())
-const resumeStorage = new SupabaseResumeStorageAdapter(env.supabase.url(), env.supabase.serviceRoleKey())
+function lazyExecute<TArgs extends unknown[], TResult>(
+  factory: () => { execute: (...args: TArgs) => TResult },
+) {
+  let instance: { execute: (...args: TArgs) => TResult } | null = null
 
-// Use cases
-export const discoverCompaniesUseCase = new DiscoverCompaniesUseCase(companyDiscovery)
-export const askChatUseCase = new AskChatUseCase(chatAssistant)
-export const fetchCareerPageJobsUseCase = new FetchCareerPageJobsUseCase(careerPages)
-export const uploadResumeUseCase = new UploadResumeUseCase(resumeStorage, resumeRepository)
+  return {
+    execute: (...args: TArgs) => {
+      if (!instance) {
+        instance = factory()
+      }
+
+      return instance.execute(...args)
+    },
+  }
+}
+
+export const discoverCompaniesUseCase = lazyExecute((() => {
+  const companyDiscovery = new OpenAICompanyDiscoveryAdapter(env.openai.apiKey())
+  return new DiscoverCompaniesUseCase(companyDiscovery)
+}) satisfies () => DiscoverCompaniesUseCase)
+
+export const askChatUseCase = lazyExecute((() => {
+  const chatAssistant = new OpenAIChatAssistantAdapter(
+    env.openai.apiKey(),
+    env.openai.chatModel(),
+  )
+
+  return new AskChatUseCase(chatAssistant)
+}) satisfies () => AskChatUseCase)
+
+export const fetchCareerPageJobsUseCase = lazyExecute((() => {
+  const careerPages = new CareerPageAdapter()
+  return new FetchCareerPageJobsUseCase(careerPages)
+}) satisfies () => FetchCareerPageJobsUseCase)
+
+export const uploadResumeUseCase = lazyExecute((() => {
+  const resumeRepository = new SupabaseResumeRepositoryAdapter(env.supabase.url(), env.supabase.serviceRoleKey())
+  const resumeStorage = new SupabaseResumeStorageAdapter(env.supabase.url(), env.supabase.serviceRoleKey())
+
+  return new UploadResumeUseCase(resumeStorage, resumeRepository)
+}) satisfies () => UploadResumeUseCase)

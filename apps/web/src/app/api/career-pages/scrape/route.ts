@@ -1,17 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import type { ATSProvider } from '@ceevee/types'
 import { fetchCareerPageJobsUseCase } from '@/infrastructure/container'
-import { createClient } from '@/lib/supabase/server'
+import { requireApiUser } from '@/modules/auth/server'
 import { isIP } from 'node:net'
 
 // Delivery layer responsibility: parse the HTTP request, call the use case, return a response.
 // No business logic here.
 export async function POST(request: NextRequest) {
-  const supabase = await createClient()
-  const authResult = await supabase.auth.getUser()
-  if (authResult.error || !authResult.data.user) {
-    return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
-  }
+  const auth = await requireApiUser()
+  if (!auth.ok) return auth.response
 
   let body: unknown
   try {

@@ -24,7 +24,89 @@ Once running, the CLI prints the local URLs and keys:
 | DB (direct)    | postgresql://postgres:postgres@127.0.0.1:54322/postgres |
 | Inbucket (email) | http://127.0.0.1:54324     |
 
-Copy the `anon key` and `service_role key` from the output into your `.env.local`.
+## Required App Env for Local Development
+
+Running the local database is only one half of the setup. If you want the app to use this local Docker Supabase instance, the Next.js app must also point to the same local Supabase URLs and keys.
+
+The app loads env files in this order:
+
+1. root `.env`
+2. root `.env.local`
+
+If the same variable exists in both files, `.env.local` overrides `.env`.
+
+This is important because the shared `.env` may contain placeholders or example values such as:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+```
+
+or commented examples like:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
+```
+
+Those values document the shape of the config, but they are not valid local runtime values.
+
+If you boot the app while those placeholders are still active, API routes can fail with errors such as:
+
+```text
+Invalid supabaseUrl: Provided URL is malformed.
+```
+
+## What to Put in `.env.local`
+
+For local Docker Supabase, create a root `.env.local` file and set:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRFA0NiK7urOoD9bje4iOUS5dbUasLEesdJiuujjNVY
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hj04zWl196z2-SBc0
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+These local values are also present in `.env.example`.
+
+Use them as local overrides:
+
+- keep `.env` for shared defaults/examples
+- put real local values into `.env.local`
+
+Do not replace the local URL with a placeholder like `your_supabase_url`.
+
+Also do not replace it with `https://<project>.supabase.co` unless you intentionally want to connect to a real remote Supabase project instead of the local Docker stack described in this document.
+
+## Recommended Local Flow
+
+1. Start local Supabase with `pnpm db:start`
+2. Create `.env.local` in the repo root if it does not exist
+3. Copy the local Supabase values from `.env.example` into `.env.local`
+4. Start the app with `pnpm dev` or `pnpm dev:stack`
+
+## Troubleshooting
+
+If the frontend loads but chat or API routes fail:
+
+1. Check whether `.env.local` exists in the repo root
+2. Verify that `NEXT_PUBLIC_SUPABASE_URL` is `http://127.0.0.1:54321` for local Docker Supabase
+3. Verify that the anon key and service role key are the local CLI values, not placeholders
+4. Restart the app after changing env files
+
+Typical bad values:
+
+- `your_supabase_url`
+- `https://<project>.supabase.co`
+- `<anon-key>`
+- `<service-role-key>`
+
+Typical good local values:
+
+- `http://127.0.0.1:54321`
+- the fixed local anon key from `.env.example`
+- the fixed local service role key from `.env.example`
 
 ## Stop
 
