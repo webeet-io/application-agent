@@ -63,7 +63,7 @@ sequenceDiagram
     B->>A: GET /login
     A-->>B: Login page with Google button
     U->>B: Click Continue with Google
-    B->>S: signInWithOAuth(google, redirectTo=/auth/callback)
+    B->>S: signInWithOAuth(google, redirectTo=<current-app-origin>/auth/callback)
     S-->>B: Redirect to Google consent
     B->>G: OAuth authorization request
     U->>G: Choose account and approve
