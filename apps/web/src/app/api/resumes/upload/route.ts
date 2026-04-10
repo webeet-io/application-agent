@@ -1,15 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { uploadResumeUseCase } from '@/infrastructure/container'
-import { createClient } from '@/lib/supabase/server'
+import { requireApiUser } from '@/modules/auth/server'
 
 // Delivery layer responsibility: parse the HTTP request, call the use case, return a response.
 // No business logic here.
 export async function POST(request: NextRequest) {
-  const supabase = await createClient()
-  const authResult = await supabase.auth.getUser()
-  if (authResult.error || !authResult.data.user) {
-    return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
-  }
+  const auth = await requireApiUser()
+  if (!auth.ok) return auth.response
 
   let formData: FormData
   try {
@@ -29,7 +26,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'label is required' }, { status: 400 })
   }
 
-  const userId = authResult.data.user.id
+  const userId = auth.user.id
 
   const content = await file.arrayBuffer()
 

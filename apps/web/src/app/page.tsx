@@ -1,10 +1,22 @@
 import Link from 'next/link'
+import { LogoutButton } from '@/modules/auth/components/logout-button'
+import { UserBadge } from '@/modules/auth/components/user-badge'
+import { extractUserProfile } from '@/modules/auth/lib/extract-user-profile'
+import { requireUser } from '@/modules/auth/server'
 import { ChatInterface } from '@/modules/chat/components/chat-interface'
 
-export default function Home() {
+export default async function Home() {
+  const user = await requireUser()
+  const { avatarUrl, displayName } = extractUserProfile(user)
+
   return (
     <main className="px-5 py-10 md:px-8 md:py-12">
       <div className="mx-auto grid w-full max-w-[1240px] gap-8">
+        <header className="flex flex-col gap-3 rounded-[26px] border border-[rgba(71,53,40,0.11)] bg-[rgba(252,249,244,0.72)] px-5 py-4 shadow-[0_18px_40px_rgba(65,46,32,0.1)] backdrop-blur-[16px] md:flex-row md:items-center md:justify-between">
+          <UserBadge initialAvatarUrl={avatarUrl} initialDisplayName={displayName} />
+          <LogoutButton />
+        </header>
+
         <section className="grid gap-4 rounded-[34px] border border-[rgba(71,53,40,0.11)] bg-[rgba(252,249,244,0.82)] p-6 shadow-[0_28px_80px_rgba(65,46,32,0.16)] backdrop-blur-[18px]">
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div className="max-w-[42rem]">
@@ -27,8 +39,11 @@ export default function Home() {
             </Link>
           </div>
         </section>
+
         <div className="flex min-h-full items-start justify-center">
-          <ChatInterface />
+          <div className="w-full max-w-[940px]">
+            <ChatInterface />
+          </div>
         </div>
       </div>
     </main>

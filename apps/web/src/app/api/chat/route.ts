@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { askChatUseCase } from '@/infrastructure/container'
+import { requireApiUser } from '@/modules/auth/server'
 
 const requestSchema = z.object({
   messages: z
@@ -17,6 +18,9 @@ export const runtime = 'nodejs'
 const exposeDebugDetail = process.env.NODE_ENV !== 'production'
 
 export async function POST(request: Request) {
+  const auth = await requireApiUser()
+  if (!auth.ok) return auth.response
+
   const parsed = requestSchema.safeParse(await request.json().catch(() => null))
   if (!parsed.success) {
     return Response.json({ error: 'Invalid chat payload.' }, { status: 400 })
