@@ -8,9 +8,16 @@ import { AskChatUseCase } from '@/application/AskChatUseCase'
 import { CareerPageAdapter } from '@/adapters/career-pages/CareerPageAdapter'
 import { SupabaseResumeRepositoryAdapter } from '@/adapters/db/SupabaseResumeRepositoryAdapter'
 import { SupabaseResumeStorageAdapter } from '@/adapters/storage/SupabaseResumeStorageAdapter'
+import { SupabaseMentorPreferenceAdapter } from '@/adapters/db/SupabaseMentorPreferenceAdapter'
+import { SupabaseResumeSignalAdapter } from '@/adapters/db/SupabaseResumeSignalAdapter'
+import { SupabaseJobOpportunitySignalAdapter } from '@/adapters/db/SupabaseJobOpportunitySignalAdapter'
+import { SupabaseSkillGapApplicationHistoryAdapter } from '@/adapters/db/SupabaseSkillGapApplicationHistoryAdapter'
+import { SupabaseUserDeclaredSkillAdapter } from '@/adapters/db/SupabaseUserDeclaredSkillAdapter'
+import { SupabaseLearningProgressAdapter } from '@/adapters/db/SupabaseLearningProgressAdapter'
 import { DiscoverCompaniesUseCase } from '@/application/DiscoverCompaniesUseCase'
 import { FetchCareerPageJobsUseCase } from '@/application/FetchCareerPageJobsUseCase'
 import { UploadResumeUseCase } from '@/application/UploadResumeUseCase'
+import { GenerateSkillGapPlanUseCase } from '@/application/GenerateSkillGapPlanUseCase'
 import { env } from './env'
 
 function lazyExecute<TArgs extends unknown[], TResult>(
@@ -54,3 +61,18 @@ export const uploadResumeUseCase = lazyExecute((() => {
 
   return new UploadResumeUseCase(resumeStorage, resumeRepository)
 }) satisfies () => UploadResumeUseCase)
+
+export const generateSkillGapPlanUseCase = lazyExecute((() => {
+  const supabaseUrl = env.supabase.url()
+  const serviceRoleKey = env.supabase.serviceRoleKey()
+
+  return new GenerateSkillGapPlanUseCase({
+    mentorSkillGapPreferencePort: new SupabaseMentorPreferenceAdapter(supabaseUrl, serviceRoleKey),
+    resumeSignalPort: new SupabaseResumeSignalAdapter(supabaseUrl, serviceRoleKey),
+    jobOpportunitySignalPort: new SupabaseJobOpportunitySignalAdapter(supabaseUrl, serviceRoleKey),
+    applicationHistoryPort: new SupabaseSkillGapApplicationHistoryAdapter(supabaseUrl, serviceRoleKey),
+    userDeclaredSkillPort: new SupabaseUserDeclaredSkillAdapter(supabaseUrl, serviceRoleKey),
+    learningProgressPort: new SupabaseLearningProgressAdapter(supabaseUrl, serviceRoleKey),
+    // learningResourcePort omitted — OpenAILearningResourceAdapter is a Phase 3 follow-up
+  })
+}) satisfies () => GenerateSkillGapPlanUseCase)
