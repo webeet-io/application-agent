@@ -2,31 +2,11 @@ import { requireUser } from '@/modules/auth/server'
 import { ChatInterface } from '@/modules/chat/components/chat-interface'
 import { LogoutButton } from '@/modules/auth/components/logout-button'
 import { UserBadge } from '@/modules/auth/components/user-badge'
-
-function pickString(value: unknown): string | null {
-  return typeof value === 'string' && value.length > 0 ? value : null
-}
+import { extractUserProfile } from '@/modules/auth/lib/extract-user-profile'
 
 export default async function Home() {
   const user = await requireUser()
-  const primaryIdentity =
-    Array.isArray(user.identities) && user.identities.length > 0
-      ? user.identities[0]?.identity_data
-      : null
-
-  const avatarUrl =
-    pickString(user.user_metadata?.avatar_url) ??
-    pickString(user.user_metadata?.picture) ??
-    pickString(primaryIdentity?.avatar_url) ??
-    pickString(primaryIdentity?.picture)
-
-  const displayName =
-    pickString(user.user_metadata?.full_name) ??
-    pickString(user.user_metadata?.name) ??
-    pickString(primaryIdentity?.full_name) ??
-    pickString(primaryIdentity?.name) ??
-    user.email ??
-    user.id
+  const { avatarUrl, displayName } = extractUserProfile(user)
 
   return (
     <main className="grid min-h-screen px-5 py-12 md:px-8">
