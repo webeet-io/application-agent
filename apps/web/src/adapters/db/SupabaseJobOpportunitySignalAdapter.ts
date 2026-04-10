@@ -2,7 +2,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { IJobOpportunitySignalPort, JobOpportunitySignalPortError } from '@/ports/outbound/IJobOpportunitySignalPort'
 import type { AttemptResult } from '@ceevee/types'
 import type { OpportunitySignalInput } from '@/domain/mentor-skill-gap'
-import { normalizeJobTitle } from '@/domain/mentor-skill-gap-relevance'
+import { normalizeTitleFamily } from '@/domain/mentor-skill-gap-relevance'
 
 interface JobListingRow {
   id: string
@@ -64,7 +64,7 @@ export class SupabaseJobOpportunitySignalAdapter implements IJobOpportunitySigna
     const signals: OpportunitySignalInput[] = (data ?? []).map((row) => ({
       jobId: row.id,
       title: row.title,
-      normalizedTitle: normalizeJobTitle(row.title),
+      normalizedTitle: normalizeTitleFamily(row.title),
       skillsMentioned: extractSkillsFromText(row.description),
       signalsMentioned: extractSignalsFromText(row.description),
     }))
