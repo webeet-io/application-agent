@@ -2,9 +2,10 @@ import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
 
-function isProtectedPath(pathname: string) {
-  if (pathname === '/') return true
-  if (pathname.startsWith('/api/')) return true
+function isPublicPath(pathname: string) {
+  if (pathname === '/login') return true
+  if (pathname === '/register') return true
+  if (pathname.startsWith('/auth/')) return true
   return false
 }
 
@@ -12,7 +13,7 @@ export async function middleware(request: NextRequest) {
   const { response, user } = await updateSession(request)
   const pathname = request.nextUrl.pathname
 
-  if (!isProtectedPath(pathname)) return response
+  if (isPublicPath(pathname)) return response
 
   if (user) return response
 

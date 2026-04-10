@@ -4,52 +4,13 @@ import { FormEvent, useEffect, useRef } from 'react'
 import { renderMessageContent } from '@/modules/chat/lib/render-message-content'
 import { useChatThread } from '@/modules/chat/hooks/use-chat-thread'
 import { useVoiceInput } from '@/modules/chat/hooks/use-voice-input'
-
-function MicrophoneIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      className="h-5 w-5"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.9"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12 3a3.5 3.5 0 0 0-3.5 3.5v5a3.5 3.5 0 1 0 7 0v-5A3.5 3.5 0 0 0 12 3Z" />
-      <path d="M18 10.5a6 6 0 0 1-12 0" />
-      <path d="M12 16.5v4.5" />
-      <path d="M8.5 21h7" />
-    </svg>
-  )
-}
-
-const labelClassName = 'text-[0.5rem] font-bold uppercase tracking-[0.12em]'
-
-function getMessageCardClassName(role: 'assistant' | 'user') {
-  if (role === 'user') {
-    return 'justify-self-end max-w-full min-w-0 w-fit md:max-w-[78%] rounded-[20px] border border-[rgba(255,247,240,0.12)] bg-[linear-gradient(135deg,#2e211b,#1f1613)] px-[15px] pt-[14px] pb-[13px] text-[#fff7f0] shadow-[0_12px_32px_rgba(65,46,32,0.08)]'
-  }
-
-  return 'justify-self-start max-w-full min-w-0 w-fit md:max-w-[78%] rounded-[20px] border border-[rgba(58,44,33,0.08)] bg-[linear-gradient(180deg,rgba(255,253,248,0.96),rgba(247,240,232,0.92))] px-[15px] pt-[14px] pb-[13px] text-[#221914] shadow-[0_12px_32px_rgba(65,46,32,0.08)]'
-}
-
-function getMessageLinkClassName(role: 'assistant' | 'user') {
-  if (role === 'user') {
-    return 'rounded-sm font-semibold text-[#ffd4bf] underline decoration-2 decoration-[rgba(255,212,191,0.45)] underline-offset-[0.18em] outline-none transition-[background-color,color,text-decoration-color] duration-150 hover:bg-[rgba(255,247,240,0.08)] hover:text-[#fff7f0] focus-visible:bg-[rgba(255,247,240,0.12)] focus-visible:text-[#fff7f0]'
-  }
-
-  return 'rounded-sm font-semibold text-[#9f4e2b] underline decoration-2 decoration-[rgba(201,109,66,0.45)] underline-offset-[0.18em] outline-none transition-[background-color,color,text-decoration-color] duration-150 hover:bg-[rgba(201,109,66,0.1)] hover:text-[#7f3e21] focus-visible:bg-[rgba(201,109,66,0.14)] focus-visible:text-[#7f3e21]'
-}
-
-function getSourceCardClassName(role: 'assistant' | 'user') {
-  if (role === 'user') {
-    return 'grid gap-[3px] rounded-xl border border-[rgba(255,247,240,0.12)] bg-[rgba(255,247,240,0.06)] px-[11px] py-[9px] text-inherit transition duration-150 hover:border-[rgba(255,247,240,0.22)] hover:bg-[rgba(255,247,240,0.1)]'
-  }
-
-  return 'grid gap-[3px] rounded-xl border border-[rgba(58,44,33,0.1)] bg-[rgba(255,255,255,0.52)] px-[11px] py-[9px] text-inherit transition duration-150 hover:-translate-y-px hover:border-[rgba(201,109,66,0.34)] hover:bg-[rgba(255,248,242,0.9)] hover:shadow-[0_8px_18px_rgba(61,42,31,0.08)]'
-}
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
+import { Badge } from '@/components/ui/badge'
+import { ChatMessage } from '@/components/chat-message'
+import { TypingIndicator } from '@/components/typing-indicator'
+import { cn } from '@/lib/utils'
+import { ArrowUp, Mic, MicOff } from 'lucide-react'
 
 export function ChatInterface() {
   const {
@@ -80,10 +41,8 @@ export function ChatInterface() {
 
   useEffect(() => {
     if (!messageToRevealId) return
-
     const element = messageRefs.current[messageToRevealId]
     if (!element) return
-
     element.scrollIntoView({ behavior: 'smooth', block: 'start' })
     setMessageToRevealId(null)
   }, [messageToRevealId, messages])
@@ -94,174 +53,161 @@ export function ChatInterface() {
   }
 
   return (
-    <section className="mx-auto w-full max-w-[940px]">
-      <div className="grid gap-4 rounded-[34px] border border-[rgba(71,53,40,0.11)] bg-[rgba(252,249,244,0.8)] p-[22px] shadow-[0_28px_80px_rgba(65,46,32,0.16)] backdrop-blur-[18px]">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div className="max-w-[42rem]">
-            <h2 className="m-0 text-[clamp(1.9rem,3vw,2.8rem)] leading-none">LLM chat interface</h2>
-          </div>
-          <p className={`${labelClassName} text-[#6d6055]`}>Conversation Module</p>
+    <div className="flex h-screen flex-col bg-background">
+      {/* Header */}
+      <header className="flex items-center gap-3 border-b border-border bg-background/95 px-6 py-4 backdrop-blur-sm">
+        <div className="flex h-8 w-8 select-none items-center justify-center rounded-lg bg-primary text-xs font-bold text-primary-foreground">
+          CV
         </div>
+        <span className="text-sm font-semibold tracking-tight">CeeVee</span>
+        <Badge variant="secondary">AI Assistant</Badge>
+      </header>
 
-        <div className="grid content-start gap-3 rounded-[26px] border border-[rgba(58,44,33,0.08)] bg-[rgba(255,255,255,0.42)] p-[14px]">
-          <div className="grid max-h-[min(56vh,640px)] content-start gap-3 overflow-y-auto pr-0.5" aria-live="polite">
-            {messages.map((message) => (
-              <article
-                key={message.id}
-                ref={(element) => {
-                  messageRefs.current[message.id] = element
-                }}
-                className={getMessageCardClassName(message.role)}
-              >
-                <span
-                  className={`${labelClassName} block leading-none ${
-                    message.role === 'user' ? 'text-[rgba(255,247,240,0.7)]' : 'text-[rgba(34,25,20,0.72)]'
-                  }`}
-                >
-                  {message.role === 'assistant' ? 'LLM' : 'User'}
-                </span>
-                <div className="mt-0.5 whitespace-pre-wrap leading-[1.55]">
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="mx-auto max-w-3xl space-y-4 px-4 py-6">
+          {messages.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-24 text-center">
+              <div className="mb-5 flex h-14 w-14 select-none items-center justify-center rounded-2xl bg-primary text-xl font-bold text-primary-foreground">
+                CV
+              </div>
+              <h2 className="mb-2 text-xl font-semibold text-foreground">How can I help you?</h2>
+              <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
+                Ask me about job opportunities, resume feedback, or career guidance.
+              </p>
+            </div>
+          )}
+
+          {messages.map((message) => (
+            <article
+              key={message.id}
+              ref={(el) => {
+                messageRefs.current[message.id] = el
+              }}
+            >
+              <ChatMessage role={message.role}>
+                <div className="whitespace-pre-wrap">
                   {renderMessageContent(message.content, {
-                    linkClassName: getMessageLinkClassName(message.role),
+                    linkClassName: cn(
+                      'underline underline-offset-2 transition-opacity',
+                      message.role === 'user'
+                        ? 'opacity-80 hover:opacity-100'
+                        : 'text-primary hover:opacity-70'
+                    ),
                     rawLinkClassName: 'break-all',
                   })}
                 </div>
                 {message.role === 'assistant' && message.sources?.length ? (
-                  <div className="mt-2.5 border-t border-[rgba(58,44,33,0.12)] pt-2.5">
-                    <span className="block text-xs font-bold uppercase tracking-[0.08em] text-[#6d6055]">
+                  <div className="mt-3 border-t border-border/40 pt-3">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                       Sources
-                    </span>
-                    <ul className="mt-2 grid list-none gap-1.5 pl-0">
+                    </p>
+                    <div className="flex flex-col gap-1.5">
                       {message.sources.map((source) => (
-                        <li key={`${source.url}-${source.title}`}>
-                          <a
-                            className={getSourceCardClassName(message.role)}
-                            href={source.url}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            <span>{source.title}</span>
-                            <span className="break-all text-[0.84rem] text-[#6d6055]">
-                              {source.url}
-                            </span>
-                          </a>
-                        </li>
+                        <a
+                          key={`${source.url}-${source.title}`}
+                          className="flex flex-col gap-0.5 rounded-lg border border-border bg-background px-3 py-2 text-xs transition-colors hover:bg-secondary/40"
+                          href={source.url}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <span className="font-medium text-foreground">{source.title}</span>
+                          <span className="break-all text-muted-foreground">{source.url}</span>
+                        </a>
                       ))}
-                    </ul>
+                    </div>
                   </div>
                 ) : null}
-              </article>
-            ))}
+              </ChatMessage>
+            </article>
+          ))}
 
-            {isSending ? (
-              <div className="min-w-[120px] justify-self-start rounded-[20px] border border-[rgba(58,44,33,0.08)] bg-[linear-gradient(180deg,rgba(255,253,248,0.96),rgba(247,240,232,0.92))] px-[15px] pt-[14px] pb-[13px] shadow-[0_12px_32px_rgba(65,46,32,0.08)]">
-                <span className={`${labelClassName} block leading-none text-[rgba(34,25,20,0.72)]`}>
-                  LLM
-                </span>
-                <div className="mt-2.5 inline-flex gap-1.5" aria-label="Assistant is typing">
-                  <span className="h-2 w-2 animate-pulse rounded-full bg-[rgba(36,25,20,0.48)]" />
-                  <span className="h-2 w-2 animate-pulse rounded-full bg-[rgba(36,25,20,0.48)] [animation-delay:120ms]" />
-                  <span className="h-2 w-2 animate-pulse rounded-full bg-[rgba(36,25,20,0.48)] [animation-delay:240ms]" />
-                </div>
-              </div>
-            ) : null}
-          </div>
+          {isSending && <TypingIndicator />}
         </div>
+      </div>
 
-        <form
-          className="grid gap-3 rounded-[26px] border border-[rgba(58,44,33,0.1)] bg-[#fffdf9] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
-          onSubmit={sendMessage}
-        >
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <label className={`${labelClassName} text-[#221914]`} htmlFor="chat-input">
-              Your message
-            </label>
-            <span className="text-[0.85rem] text-[#6d6055]">
-              Enter to send, Shift+Enter for a new line
-            </span>
-          </div>
-          <div className="rounded-[18px] border border-[rgba(58,44,33,0.1)] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(255,252,248,1))] p-px">
-            <textarea
-              id="chat-input"
-              className="min-h-[88px] w-full resize-y bg-transparent px-[14px] py-3 leading-[1.55] text-[#221914] outline-none"
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' && !event.shiftKey) {
-                  event.preventDefault()
-                  void sendMessage()
-                }
-              }}
-              placeholder="Ask a specific question, request a summary, or ask for a source-backed web answer..."
-              rows={3}
-            />
-          </div>
-          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-            <p className="m-0 text-[0.92rem] text-[#6d6055]">
-              {isRecording
-                ? 'Listening now. Speak naturally and stop the microphone when you are done.'
-                : 'Keep prompts concrete for better answers. Current or factual questions can use web search.'}
-            </p>
-            <div className="flex flex-wrap items-center gap-2.5">
-              <div
-                className={`flex w-[72px] justify-end transition-opacity duration-150 ${
-                  isRecording ? 'opacity-100' : 'opacity-0'
-                }`}
-                aria-hidden="true"
-              >
-                <div className="flex h-7 w-[72px] items-center justify-end gap-[5px]">
-                  {voiceLevels.map((level, index) => (
-                    <span
-                      key={`voice-level-${index}`}
-                      className="h-2.5 min-w-1 flex-1 origin-right rounded-full bg-[linear-gradient(180deg,rgba(203,110,68,0.9),rgba(159,78,43,0.55))] opacity-90 shadow-[0_0_18px_rgba(203,110,68,0.18)] transition-transform duration-75 ease-out"
-                      style={{ transform: `scaleX(${level})`, maxWidth: '8px' }}
-                    />
-                  ))}
-                </div>
-              </div>
-              <button
-                type="button"
-                className={`inline-flex h-12 w-12 items-center justify-center rounded-full border p-0 transition duration-150 disabled:cursor-not-allowed disabled:opacity-55 ${
-                  isRecording
-                    ? 'border-[rgba(159,47,36,0.28)] bg-[rgba(255,239,236,0.95)] text-[#9f2f24]'
-                    : 'border-[rgba(58,44,33,0.1)] bg-[rgba(255,255,255,0.9)] text-[#221914] hover:-translate-y-px hover:border-[rgba(201,109,66,0.28)] hover:bg-[rgba(255,247,241,0.95)]'
-                }`}
-                onClick={() => void toggleRecording()}
-                disabled={isSending}
-                aria-pressed={isRecording}
-                aria-label={isRecording ? 'Stop recording' : 'Start voice input'}
-                title={isRecording ? 'Stop recording' : 'Voice input'}
-              >
-                <MicrophoneIcon />
-              </button>
-              <button
-                type="submit"
-                className="rounded-full bg-[linear-gradient(135deg,#cb6e44,#9f4e2b)] px-[22px] py-[13px] font-bold text-[#fffaf6] shadow-[0_12px_24px_rgba(159,78,43,0.22)] transition duration-150 hover:-translate-y-px hover:shadow-[0_16px_28px_rgba(159,78,43,0.28)] disabled:cursor-not-allowed disabled:opacity-45"
-                disabled={isSending || !input.trim()}
-              >
-                Send
-              </button>
-            </div>
-          </div>
-          {error ? (
-            <div className="mt-3 rounded-[18px] border border-[rgba(159,47,36,0.15)] bg-[rgba(255,243,240,0.92)] px-4 py-3 text-[#9f2f24]">
-              <p className="m-0 text-[0.92rem]">{error}</p>
-              {errorDebugDetail ? (
-                <details className="mt-2 group">
-                  <summary className="inline-flex cursor-pointer list-none items-center gap-1 text-[0.78rem] font-semibold tracking-[0.01em] text-[rgba(122,46,35,0.92)] marker:content-none">
+      {/* Input */}
+      <div className="border-t border-border bg-background">
+        <div className="mx-auto max-w-3xl px-4 pb-4 pt-3">
+          {error && (
+            <div className="mb-3 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3">
+              <p className="text-sm text-destructive">{error}</p>
+              {errorDebugDetail && (
+                <details className="group mt-2">
+                  <summary className="flex cursor-pointer list-none items-center gap-1 text-xs font-medium text-destructive/80">
                     <span className="transition-transform duration-150 group-open:rotate-180">▾</span>
                     Developer detail
                   </summary>
-                  <pre className="mt-2 overflow-x-auto whitespace-pre-wrap rounded-xl border border-[rgba(159,47,36,0.12)] bg-[rgba(255,255,255,0.72)] px-3 py-2 text-[0.75rem] leading-[1.45] text-[#6f2d22]">
+                  <pre className="mt-2 overflow-x-auto whitespace-pre-wrap rounded-md bg-background px-3 py-2 text-xs text-destructive/70">
                     {errorDebugDetail}
                   </pre>
                 </details>
-              ) : null}
+              )}
             </div>
-          ) : null}
-          {notice ? <p className="m-0 text-[0.92rem] text-[#6d6055]">{notice}</p> : null}
-        </form>
+          )}
+          {notice && <p className="mb-3 text-xs text-muted-foreground">{notice}</p>}
+
+          <form onSubmit={sendMessage}>
+            <div className="flex items-end gap-2 rounded-xl border border-border bg-background px-3 py-2 transition-[border-color] focus-within:border-primary/40">
+              <Textarea
+                id="chat-input"
+                className="min-h-[36px] flex-1 resize-none border-0 bg-transparent p-0 text-sm leading-relaxed shadow-none placeholder:text-muted-foreground/50 focus-visible:ring-0"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    void sendMessage()
+                  }
+                }}
+                placeholder="Message CeeVee..."
+                rows={1}
+              />
+              <div className="flex shrink-0 items-center gap-1 pb-0.5">
+                {isRecording && (
+                  <div className="mr-1 flex h-5 items-end gap-0.5">
+                    {voiceLevels.map((level, i) => (
+                      <span
+                        key={i}
+                        className="w-0.5 rounded-full bg-destructive/70 transition-all duration-75"
+                        style={{ height: `${Math.max(6, level * 20)}px` }}
+                      />
+                    ))}
+                  </div>
+                )}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    'h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground',
+                    isRecording &&
+                      'bg-destructive/10 text-destructive hover:bg-destructive/15 hover:text-destructive'
+                  )}
+                  onClick={() => void toggleRecording()}
+                  disabled={isSending}
+                  aria-pressed={isRecording}
+                  aria-label={isRecording ? 'Stop recording' : 'Start voice input'}
+                >
+                  {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                </Button>
+                <Button
+                  type="submit"
+                  size="icon"
+                  className="h-8 w-8 rounded-lg"
+                  disabled={isSending || !input.trim()}
+                  aria-label="Send message"
+                >
+                  <ArrowUp className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <p className="mt-2 text-center text-xs text-muted-foreground/50">
+              Enter to send · Shift+Enter for new line
+            </p>
+          </form>
+        </div>
       </div>
-    </section>
+    </div>
   )
 }

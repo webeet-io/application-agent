@@ -11,11 +11,5 @@ export default async function LoginPage({
   if (user) redirect('/')
   const params = await searchParams
 
-  return (
-    <main className="grid min-h-screen place-items-center px-5 py-12 md:px-8">
-      <div className="w-full max-w-[720px]">
-        <LoginForm initialError={params.error ?? null} />
-      </div>
-    </main>
-  )
+  return <LoginForm initialError={params.error ?? null} />
 }
