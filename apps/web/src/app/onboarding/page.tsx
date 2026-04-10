@@ -1,5 +1,8 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
+import { resolveUserOnboardingStateUseCase } from '@/infrastructure/container'
 import { WorkspaceShell } from '@/modules/workspace/components/workspace-shell'
+import { getWorkspaceUserContext } from '@/modules/workspace/server'
 
 function ActionLink({
   href,
@@ -26,12 +29,37 @@ function ActionLink({
 }
 
 export default async function OnboardingPage() {
+  const userContext = await getWorkspaceUserContext()
+  const onboardingStateResult = await resolveUserOnboardingStateUseCase.execute({
+    userId: userContext.userId,
+  })
+
+  if (!onboardingStateResult.success) {
+    throw new Error(onboardingStateResult.error.message)
+  }
+
+  if (onboardingStateResult.value.status === 'profile_ready') {
+    redirect('/opportunities')
+  }
+
+  const isInProgress = onboardingStateResult.value.status === 'onboarding_in_progress'
+  const activeSession = onboardingStateResult.value.activeSession
+
   return (
     <WorkspaceShell
       currentPath="/onboarding"
+      userContext={userContext}
       eyebrow="Onboarding Flow"
-      title="Guide the user from first login to a usable career profile."
-      description="This page establishes the future onboarding experience: resume upload or skip, guided information gathering, and a clear transition into opportunities."
+      title={
+        isInProgress
+          ? 'Continue the onboarding flow toward a usable career profile.'
+          : 'Guide the user from first login to a usable career profile.'
+      }
+      description={
+        isInProgress
+          ? 'An active onboarding session already exists. The next product steps should continue from the saved session instead of starting over.'
+          : 'This page establishes the future onboarding experience: resume upload or skip, guided information gathering, and a clear transition into opportunities.'
+      }
       actions={
         <>
           <ActionLink href="/career-profile" label="Open career profile" tone="secondary" />
@@ -39,6 +67,27 @@ export default async function OnboardingPage() {
         </>
       }
     >
+      <section className="rounded-[28px] border border-[rgba(71,53,40,0.11)] bg-[rgba(255,252,248,0.78)] p-5 shadow-[0_18px_50px_rgba(65,46,32,0.08)]">
+        <p className="m-0 text-[0.68rem] font-bold uppercase tracking-[0.14em] text-[#8d7667]">
+          Current session state
+        </p>
+        <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="m-0 text-[1.45rem] leading-tight text-[#221914]">
+              {isInProgress ? 'Onboarding already in progress' : 'No onboarding session yet'}
+            </h2>
+            <p className="mt-2 text-[0.98rem] leading-[1.7] text-[#594b41]">
+              {isInProgress
+                ? `Current step: ${activeSession?.currentStep ?? 'guided_chat'}. This will later restore upload state, parsed resume text, and saved onboarding messages.`
+                : 'The next implementation step can now safely create a first onboarding session and persist it in the database.'}
+            </p>
+          </div>
+          <div className="rounded-full border border-[rgba(58,44,33,0.12)] bg-[rgba(255,255,255,0.88)] px-4 py-2 text-[0.82rem] font-semibold uppercase tracking-[0.12em] text-[#7d3f23]">
+            {onboardingStateResult.value.status}
+          </div>
+        </div>
+      </section>
+
       <section className="grid gap-4 xl:grid-cols-3">
         <article className="grid gap-4 rounded-[28px] border border-[rgba(71,53,40,0.11)] bg-[rgba(255,252,248,0.78)] p-5 shadow-[0_18px_50px_rgba(65,46,32,0.08)]">
           <div>

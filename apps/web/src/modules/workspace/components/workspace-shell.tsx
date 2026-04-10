@@ -2,8 +2,8 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { LogoutButton } from '@/modules/auth/components/logout-button'
 import { UserBadge } from '@/modules/auth/components/user-badge'
-import { extractUserProfile } from '@/modules/auth/lib/extract-user-profile'
-import { requireUser } from '@/modules/auth/server'
+import type { WorkspaceUserContext } from '@/modules/workspace/server'
+import { getWorkspaceUserContext } from '@/modules/workspace/server'
 
 interface WorkspaceShellProps {
   currentPath: '/' | '/onboarding' | '/career-profile' | '/opportunities'
@@ -12,6 +12,7 @@ interface WorkspaceShellProps {
   description: string
   actions?: ReactNode
   children: ReactNode
+  userContext?: WorkspaceUserContext
 }
 
 const navigationItems: Array<{
@@ -40,9 +41,10 @@ export async function WorkspaceShell({
   description,
   actions,
   children,
+  userContext,
 }: WorkspaceShellProps) {
-  const user = await requireUser()
-  const { avatarUrl, displayName } = extractUserProfile(user)
+  const resolvedUserContext = userContext ?? (await getWorkspaceUserContext())
+  const { avatarUrl, displayName } = resolvedUserContext
 
   return (
     <main className="px-5 py-10 md:px-8 md:py-12">

@@ -8,6 +8,9 @@ export type ResumeId = string & { readonly _brand: 'ResumeId' }
 export type CompanyId = string & { readonly _brand: 'CompanyId' }
 export type JobId = string & { readonly _brand: 'JobId' }
 export type ApplicationId = string & { readonly _brand: 'ApplicationId' }
+export type CareerProfileRecordId = string & { readonly _brand: 'CareerProfileRecordId' }
+export type OnboardingSessionId = string & { readonly _brand: 'OnboardingSessionId' }
+export type OnboardingChatMessageId = string & { readonly _brand: 'OnboardingChatMessageId' }
 
 export interface Resume {
   id: ResumeId
@@ -49,7 +52,13 @@ export interface Job {
   fetchedAt: Date
 }
 
-export type ApplicationStatus = 'saved' | 'applied' | 'interview' | 'rejected' | 'offer' | 'withdrawn'
+export type ApplicationStatus =
+  | 'saved'
+  | 'applied'
+  | 'interview'
+  | 'rejected'
+  | 'offer'
+  | 'withdrawn'
 
 export interface Application {
   id: ApplicationId
@@ -95,6 +104,7 @@ export type MatchGapSeverity = 'critical' | 'moderate' | 'low'
 export type MatchGapType = 'critical_gap' | 'learnable_gap' | 'presentation_gap'
 export type SkillLearningPriority = 'high' | 'medium' | 'low'
 export type DivergenceLevel = 'low' | 'moderate' | 'high'
+export type CareerProfileStatus = 'draft' | 'ready'
 export type CareerProfileSkillSource =
   | 'resume'
   | 'user_input'
@@ -102,6 +112,13 @@ export type CareerProfileSkillSource =
   | 'project'
   | 'education'
   | 'skills_section'
+export type OnboardingSessionStatus = 'in_progress' | 'completed' | 'abandoned'
+export type OnboardingStep = 'resume_upload' | 'guided_chat' | 'review' | 'completed'
+export type OnboardingChatRole = 'assistant' | 'user' | 'system'
+export type UserOnboardingStateStatus =
+  | 'needs_onboarding'
+  | 'onboarding_in_progress'
+  | 'profile_ready'
 
 export interface ResumeSkillEvidence {
   skill: string
@@ -163,6 +180,46 @@ export interface CareerProfile {
   projects?: CareerProfileProject[]
   education?: CareerProfileEducation[]
   additionalNotes?: string
+}
+
+export interface PersistedCareerProfile {
+  id: CareerProfileRecordId
+  userId: string
+  status: CareerProfileStatus
+  profile: CareerProfile
+  sourceResumeId: ResumeId | null
+  onboardingSessionId: OnboardingSessionId | null
+  completenessScore: number
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface OnboardingSession {
+  id: OnboardingSessionId
+  userId: string
+  status: OnboardingSessionStatus
+  currentStep: OnboardingStep
+  resumeId: ResumeId | null
+  resumeText: string | null
+  profileDraft: Partial<CareerProfile> | null
+  completedAt: Date | null
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface OnboardingChatMessage {
+  id: OnboardingChatMessageId
+  sessionId: OnboardingSessionId
+  userId: string
+  role: OnboardingChatRole
+  content: string
+  createdAt: Date
+}
+
+export interface UserOnboardingState {
+  status: UserOnboardingStateStatus
+  activeSession: OnboardingSession | null
+  careerProfile: PersistedCareerProfile | null
 }
 
 export interface ResumeProfile {

@@ -1,11 +1,28 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
+import { resolveUserOnboardingStateUseCase } from '@/infrastructure/container'
 import { ChatInterface } from '@/modules/chat/components/chat-interface'
 import { WorkspaceShell } from '@/modules/workspace/components/workspace-shell'
+import { getWorkspaceUserContext } from '@/modules/workspace/server'
 
 export default async function Home() {
+  const userContext = await getWorkspaceUserContext()
+  const onboardingStateResult = await resolveUserOnboardingStateUseCase.execute({
+    userId: userContext.userId,
+  })
+
+  if (!onboardingStateResult.success) {
+    throw new Error(onboardingStateResult.error.message)
+  }
+
+  if (onboardingStateResult.value.status !== 'profile_ready') {
+    redirect('/onboarding')
+  }
+
   return (
     <WorkspaceShell
       currentPath="/"
+      userContext={userContext}
       eyebrow="CeeVee Workspace"
       title="Chat, onboarding, and profile structure in one calm workspace."
       description="This workspace now prepares the onboarding flow with clear navigation. The chat remains available here, while Career Profile and Opportunities already have dedicated destinations in the product."
@@ -34,7 +51,8 @@ export default async function Home() {
               session progress.
             </div>
             <div className="rounded-[22px] border border-[rgba(58,44,33,0.08)] bg-[rgba(255,255,255,0.74)] px-4 py-4">
-              Use <strong>Career Profile</strong> as the long-term home for structured user data.
+              Your <strong>Career Profile</strong> is already considered ready enough to unlock the
+              main workspace.
             </div>
             <div className="rounded-[22px] border border-[rgba(58,44,33,0.08)] bg-[rgba(255,255,255,0.74)] px-4 py-4">
               Use <strong>Opportunities</strong> as the target destination after onboarding is

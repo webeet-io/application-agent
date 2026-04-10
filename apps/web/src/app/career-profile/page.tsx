@@ -1,5 +1,7 @@
 import Link from 'next/link'
+import { resolveUserOnboardingStateUseCase } from '@/infrastructure/container'
 import { WorkspaceShell } from '@/modules/workspace/components/workspace-shell'
+import { getWorkspaceUserContext } from '@/modules/workspace/server'
 
 function ProfileField({ label, description }: { label: string; description: string }) {
   return (
@@ -13,9 +15,21 @@ function ProfileField({ label, description }: { label: string; description: stri
 }
 
 export default async function CareerProfilePage() {
+  const userContext = await getWorkspaceUserContext()
+  const onboardingStateResult = await resolveUserOnboardingStateUseCase.execute({
+    userId: userContext.userId,
+  })
+
+  if (!onboardingStateResult.success) {
+    throw new Error(onboardingStateResult.error.message)
+  }
+
+  const persistedProfile = onboardingStateResult.value.careerProfile
+
   return (
     <WorkspaceShell
       currentPath="/career-profile"
+      userContext={userContext}
       eyebrow="Career Profile"
       title="A dedicated home for structured resume and onboarding knowledge."
       description="This area will become the stable source for job fit, resume scoring, and later mentoring features. It should outlive any single resume upload."
@@ -38,6 +52,14 @@ export default async function CareerProfilePage() {
     >
       <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
         <div className="grid gap-4 rounded-[28px] border border-[rgba(71,53,40,0.11)] bg-[rgba(255,252,248,0.78)] p-5 shadow-[0_18px_50px_rgba(65,46,32,0.08)]">
+          <ProfileField
+            label="Current state"
+            description={
+              persistedProfile
+                ? `A ready career profile already exists with a completeness score of ${persistedProfile.completenessScore}%.`
+                : 'No ready career profile exists yet. This page is intentionally available already so the navigation structure stays stable during onboarding.'
+            }
+          />
           <ProfileField
             label="Identity"
             description="Target roles, seniority, locations, and language preferences will live here as stable profile data."

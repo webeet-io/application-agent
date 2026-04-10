@@ -4,8 +4,11 @@
 
 import { OpenAICompanyDiscoveryAdapter } from '@/adapters/llm/OpenAICompanyDiscoveryAdapter'
 import { OpenAIChatAssistantAdapter } from '@/adapters/llm/OpenAIChatAssistantAdapter'
+import { SupabaseCareerProfileRepositoryAdapter } from '@/adapters/db/SupabaseCareerProfileRepositoryAdapter'
+import { SupabaseOnboardingSessionRepositoryAdapter } from '@/adapters/db/SupabaseOnboardingSessionRepositoryAdapter'
 import { AskChatUseCase } from '@/application/AskChatUseCase'
 import { CareerPageAdapter } from '@/adapters/career-pages/CareerPageAdapter'
+import { ResolveUserOnboardingStateUseCase } from '@/application/ResolveUserOnboardingStateUseCase'
 import { SupabaseResumeRepositoryAdapter } from '@/adapters/db/SupabaseResumeRepositoryAdapter'
 import { SupabaseResumeStorageAdapter } from '@/adapters/storage/SupabaseResumeStorageAdapter'
 import { DiscoverCompaniesUseCase } from '@/application/DiscoverCompaniesUseCase'
@@ -35,10 +38,7 @@ export const discoverCompaniesUseCase = lazyExecute((() => {
 }) satisfies () => DiscoverCompaniesUseCase)
 
 export const askChatUseCase = lazyExecute((() => {
-  const chatAssistant = new OpenAIChatAssistantAdapter(
-    env.openai.apiKey(),
-    env.openai.chatModel(),
-  )
+  const chatAssistant = new OpenAIChatAssistantAdapter(env.openai.apiKey(), env.openai.chatModel())
 
   return new AskChatUseCase(chatAssistant)
 }) satisfies () => AskChatUseCase)
@@ -49,8 +49,27 @@ export const fetchCareerPageJobsUseCase = lazyExecute((() => {
 }) satisfies () => FetchCareerPageJobsUseCase)
 
 export const uploadResumeUseCase = lazyExecute((() => {
-  const resumeRepository = new SupabaseResumeRepositoryAdapter(env.supabase.url(), env.supabase.serviceRoleKey())
-  const resumeStorage = new SupabaseResumeStorageAdapter(env.supabase.url(), env.supabase.serviceRoleKey())
+  const resumeRepository = new SupabaseResumeRepositoryAdapter(
+    env.supabase.url(),
+    env.supabase.serviceRoleKey(),
+  )
+  const resumeStorage = new SupabaseResumeStorageAdapter(
+    env.supabase.url(),
+    env.supabase.serviceRoleKey(),
+  )
 
   return new UploadResumeUseCase(resumeStorage, resumeRepository)
 }) satisfies () => UploadResumeUseCase)
+
+export const resolveUserOnboardingStateUseCase = lazyExecute((() => {
+  const careerProfiles = new SupabaseCareerProfileRepositoryAdapter(
+    env.supabase.url(),
+    env.supabase.serviceRoleKey(),
+  )
+  const onboardingSessions = new SupabaseOnboardingSessionRepositoryAdapter(
+    env.supabase.url(),
+    env.supabase.serviceRoleKey(),
+  )
+
+  return new ResolveUserOnboardingStateUseCase(careerProfiles, onboardingSessions)
+}) satisfies () => ResolveUserOnboardingStateUseCase)

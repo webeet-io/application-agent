@@ -1,10 +1,27 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
+import { resolveUserOnboardingStateUseCase } from '@/infrastructure/container'
 import { WorkspaceShell } from '@/modules/workspace/components/workspace-shell'
+import { getWorkspaceUserContext } from '@/modules/workspace/server'
 
 export default async function OpportunitiesPage() {
+  const userContext = await getWorkspaceUserContext()
+  const onboardingStateResult = await resolveUserOnboardingStateUseCase.execute({
+    userId: userContext.userId,
+  })
+
+  if (!onboardingStateResult.success) {
+    throw new Error(onboardingStateResult.error.message)
+  }
+
+  if (onboardingStateResult.value.status !== 'profile_ready') {
+    redirect('/onboarding')
+  }
+
   return (
     <WorkspaceShell
       currentPath="/opportunities"
+      userContext={userContext}
       eyebrow="Opportunities"
       title="The future destination after onboarding should already feel intentional."
       description="This page is the natural handoff after a user completes onboarding. It gives the product a clear place to surface relevant job opportunities and later matching results."
