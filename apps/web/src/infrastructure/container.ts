@@ -15,7 +15,6 @@ const companyDiscovery = new OpenAICompanyDiscoveryAdapter(env.openai.apiKey())
 const embeddingProvider = new OpenAIEmbeddingAdapter()
 const applicationRepository = new SupabaseApplicationRepositoryAdapter()
 
-<<<<<<< Updated upstream
 // 2. Instantiate Use cases
 // Note: As you build new Use Cases (like "SearchSimilarApplications"), 
 // you will pass 'embeddingProvider' and 'applicationRepository' into them here.
@@ -23,12 +22,3 @@ export const discoverCompaniesUseCase = new DiscoverCompaniesUseCase(companyDisc
 
 // 3. Export the new instances if needed for route handlers
 export { embeddingProvider, applicationRepository }
-=======
-// Create the embedding adapter, then pass it into the application repo!
-export const embeddingAdapter = new OpenAIEmbeddingAdapter()
-export const applicationRepository = new SupabaseApplicationRepositoryAdapter(embeddingAdapter)
-
-
-// Use cases
-export const discoverCompaniesUseCase = new DiscoverCompaniesUseCase(companyDiscovery)
->>>>>>> Stashed changes
