@@ -1,7 +1,11 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { resolveUserOnboardingStateUseCase } from '@/infrastructure/container'
+import {
+  listOnboardingChatMessagesUseCase,
+  resolveUserOnboardingStateUseCase,
+} from '@/infrastructure/container'
 import { OnboardingEntryActions } from '@/modules/onboarding/components/onboarding-entry-actions'
+import { OnboardingGuidedChat } from '@/modules/onboarding/components/onboarding-guided-chat'
 import { WorkspaceShell } from '@/modules/workspace/components/workspace-shell'
 import { getWorkspaceUserContext } from '@/modules/workspace/server'
 
@@ -45,6 +49,18 @@ export default async function OnboardingPage() {
 
   const isInProgress = onboardingStateResult.value.status === 'onboarding_in_progress'
   const activeSession = onboardingStateResult.value.activeSession
+  const shouldShowGuidedChat = activeSession?.currentStep === 'guided_chat'
+  const onboardingMessagesResult =
+    activeSession && shouldShowGuidedChat
+      ? await listOnboardingChatMessagesUseCase.execute({
+          userId: userContext.userId,
+          sessionId: activeSession.id,
+        })
+      : null
+
+  if (onboardingMessagesResult && !onboardingMessagesResult.success) {
+    throw new Error(onboardingMessagesResult.error.message)
+  }
 
   return (
     <WorkspaceShell
@@ -143,6 +159,14 @@ export default async function OnboardingPage() {
           </div>
         </article>
       </section>
+
+      {activeSession && shouldShowGuidedChat ? (
+        <OnboardingGuidedChat
+          sessionId={activeSession.id}
+          currentStep={activeSession.currentStep}
+          initialMessages={onboardingMessagesResult?.value ?? []}
+        />
+      ) : null}
     </WorkspaceShell>
   )
 }

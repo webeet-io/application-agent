@@ -5,10 +5,14 @@
 import { OpenAICompanyDiscoveryAdapter } from '@/adapters/llm/OpenAICompanyDiscoveryAdapter'
 import { OpenAIChatAssistantAdapter } from '@/adapters/llm/OpenAIChatAssistantAdapter'
 import { SupabaseCareerProfileRepositoryAdapter } from '@/adapters/db/SupabaseCareerProfileRepositoryAdapter'
+import { SupabaseOnboardingChatMessageRepositoryAdapter } from '@/adapters/db/SupabaseOnboardingChatMessageRepositoryAdapter'
 import { SupabaseOnboardingSessionRepositoryAdapter } from '@/adapters/db/SupabaseOnboardingSessionRepositoryAdapter'
+import { OpenAIOnboardingAssistantAdapter } from '@/adapters/llm/OpenAIOnboardingAssistantAdapter'
+import { AdvanceOnboardingChatUseCase } from '@/application/AdvanceOnboardingChatUseCase'
 import { AttachResumeToOnboardingSessionUseCase } from '@/application/AttachResumeToOnboardingSessionUseCase'
 import { AskChatUseCase } from '@/application/AskChatUseCase'
 import { CareerPageAdapter } from '@/adapters/career-pages/CareerPageAdapter'
+import { ListOnboardingChatMessagesUseCase } from '@/application/ListOnboardingChatMessagesUseCase'
 import { ResolveUserOnboardingStateUseCase } from '@/application/ResolveUserOnboardingStateUseCase'
 import { StartOrResumeOnboardingSessionUseCase } from '@/application/StartOrResumeOnboardingSessionUseCase'
 import { SupabaseResumeRepositoryAdapter } from '@/adapters/db/SupabaseResumeRepositoryAdapter'
@@ -102,3 +106,33 @@ export const attachResumeToOnboardingSessionUseCase = lazyExecute((() => {
 
   return new AttachResumeToOnboardingSessionUseCase(uploadResume, onboardingSessions)
 }) satisfies () => AttachResumeToOnboardingSessionUseCase)
+
+export const listOnboardingChatMessagesUseCase = lazyExecute((() => {
+  const onboardingMessages = new SupabaseOnboardingChatMessageRepositoryAdapter(
+    env.supabase.url(),
+    env.supabase.serviceRoleKey(),
+  )
+
+  return new ListOnboardingChatMessagesUseCase(onboardingMessages)
+}) satisfies () => ListOnboardingChatMessagesUseCase)
+
+export const advanceOnboardingChatUseCase = lazyExecute((() => {
+  const onboardingSessions = new SupabaseOnboardingSessionRepositoryAdapter(
+    env.supabase.url(),
+    env.supabase.serviceRoleKey(),
+  )
+  const onboardingMessages = new SupabaseOnboardingChatMessageRepositoryAdapter(
+    env.supabase.url(),
+    env.supabase.serviceRoleKey(),
+  )
+  const onboardingAssistant = new OpenAIOnboardingAssistantAdapter(
+    env.openai.apiKey(),
+    env.openai.chatModel(),
+  )
+
+  return new AdvanceOnboardingChatUseCase(
+    onboardingSessions,
+    onboardingMessages,
+    onboardingAssistant,
+  )
+}) satisfies () => AdvanceOnboardingChatUseCase)
