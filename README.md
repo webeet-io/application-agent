@@ -222,19 +222,18 @@ The script:
 
 - starts the Next.js dev server on `0.0.0.0:3000`
 - prints the local frontend URL
-- prints the network IP address(es), so you can open the app from other devices on the same network
 - prints the backend API URL on the same server
+- reminds you that local Google sign-in is only configured for `localhost/127.0.0.1`
 
 Typical output:
 
 ```text
 Frontend:
   Local:   http://localhost:3000
-  Network: http://192.168.x.x:3000
 
 Backend (Next.js API route on the same server):
   Local:   http://localhost:3000/api/chat
-  Network: http://192.168.x.x:3000/api/chat
+  Note:    Google sign-in is only configured for localhost/127.0.0.1 in local development.
 ```
 
 Stop it with `Ctrl+C`.

@@ -221,12 +221,12 @@ Google must return to Supabase first because Supabase is responsible for:
 
 After Supabase completes that work, it redirects the browser to the app callback:
 
-- `http://localhost:3000/auth/callback`
+- `<current-app-origin>/auth/callback`
 
 In short:
 
 - Google -> Supabase on `127.0.0.1:54321`
-- Supabase -> CeeVee on `localhost:3000`
+- Supabase -> CeeVee on the same app origin that initiated the sign-in flow
 
 ## App Callback Behavior
 
