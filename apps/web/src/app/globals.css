@@ -20,6 +20,10 @@
   --secondary: oklch(0.94 0.04 148);
   --secondary-foreground: oklch(0.27 0.06 256);
 
+  /* Brand accent colours */
+  --brand-green: #69bc8c;
+  --brand-mauve: #a45674;
+
   --muted: oklch(0.97 0.005 260);
   --muted-foreground: oklch(0.52 0.02 260);
   --accent: oklch(0.97 0.005 260);
@@ -54,6 +58,8 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-brand-green: var(--brand-green);
+  --color-brand-mauve: var(--brand-mauve);
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --radius-sm: calc(var(--radius) - 2px);
   --radius-md: var(--radius);

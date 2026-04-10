@@ -93,11 +93,11 @@ export function LoginForm({ initialError }: { initialError?: string | null }) {
     <div className="flex min-h-screen font-sans">
 
       {/* ── Left: Brand panel (50%) ── */}
-      <div className="relative hidden overflow-hidden bg-[#69bc8c] text-white lg:flex lg:w-1/2 lg:shrink-0 lg:flex-col lg:p-14">
+      <div className="relative hidden overflow-hidden bg-brand-green text-white lg:flex lg:w-1/2 lg:shrink-0 lg:flex-col lg:p-14">
         {/* Background decoration */}
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute -right-24 -top-24 h-[460px] w-[460px] rounded-full bg-white/15 blur-[130px]" />
-          <div className="absolute -bottom-24 -left-24 h-[380px] w-[380px] rounded-full bg-[#a45674]/25 blur-[110px]" />
+          <div className="absolute -bottom-24 -left-24 h-[380px] w-[380px] rounded-full bg-brand-mauve/25 blur-[110px]" />
           <div
             className="absolute inset-0 opacity-[0.07]"
             style={{
