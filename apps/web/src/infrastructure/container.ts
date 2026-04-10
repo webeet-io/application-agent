@@ -4,6 +4,7 @@
 
 import { OpenAICompanyDiscoveryAdapter } from '@/adapters/llm/OpenAICompanyDiscoveryAdapter'
 import { OpenAIChatAssistantAdapter } from '@/adapters/llm/OpenAIChatAssistantAdapter'
+import { OpenAILearningResourceAdapter } from '@/adapters/llm/OpenAILearningResourceAdapter'
 import { AskChatUseCase } from '@/application/AskChatUseCase'
 import { CareerPageAdapter } from '@/adapters/career-pages/CareerPageAdapter'
 import { SupabaseResumeRepositoryAdapter } from '@/adapters/db/SupabaseResumeRepositoryAdapter'
@@ -73,6 +74,6 @@ export const generateSkillGapPlanUseCase = lazyExecute((() => {
     applicationHistoryPort: new SupabaseSkillGapApplicationHistoryAdapter(supabaseUrl, serviceRoleKey),
     userDeclaredSkillPort: new SupabaseUserDeclaredSkillAdapter(supabaseUrl, serviceRoleKey),
     learningProgressPort: new SupabaseLearningProgressAdapter(supabaseUrl, serviceRoleKey),
-    // learningResourcePort omitted — OpenAILearningResourceAdapter is a Phase 3 follow-up
+    learningResourcePort: new OpenAILearningResourceAdapter(env.openai.apiKey(), env.openai.chatModel()),
   })
 }) satisfies () => GenerateSkillGapPlanUseCase)
