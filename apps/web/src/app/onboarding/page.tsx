@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { resolveUserOnboardingStateUseCase } from '@/infrastructure/container'
+import { OnboardingEntryActions } from '@/modules/onboarding/components/onboarding-entry-actions'
 import { WorkspaceShell } from '@/modules/workspace/components/workspace-shell'
 import { getWorkspaceUserContext } from '@/modules/workspace/server'
 
@@ -100,20 +101,12 @@ export default async function OnboardingPage() {
             The UI is ready for an upload-or-skip entry point. The backend can later connect PDF
             storage, text extraction, and onboarding session updates behind this step.
           </p>
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              className="rounded-full bg-[linear-gradient(135deg,#cb6e44,#9f4e2b)] px-5 py-3 font-semibold text-[#fffaf6] shadow-[0_12px_24px_rgba(159,78,43,0.22)] transition duration-150 hover:-translate-y-px hover:shadow-[0_16px_28px_rgba(159,78,43,0.28)]"
-            >
-              Upload resume
-            </button>
-            <button
-              type="button"
-              className="rounded-full border border-[rgba(58,44,33,0.12)] bg-[rgba(255,255,255,0.88)] px-5 py-3 font-semibold text-[#221914] transition duration-150 hover:-translate-y-px hover:border-[rgba(201,109,66,0.28)] hover:bg-[rgba(255,247,241,0.95)]"
-            >
-              Skip for now
-            </button>
-          </div>
+          <OnboardingEntryActions
+            status={onboardingStateResult.value.status}
+            sessionId={activeSession?.id ?? null}
+            currentStep={activeSession?.currentStep ?? null}
+            hasResume={activeSession?.resumeId != null}
+          />
         </article>
 
         <article className="grid gap-4 rounded-[28px] border border-[rgba(71,53,40,0.11)] bg-[rgba(255,252,248,0.78)] p-5 shadow-[0_18px_50px_rgba(65,46,32,0.08)]">

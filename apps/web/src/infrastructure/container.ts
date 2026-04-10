@@ -6,9 +6,11 @@ import { OpenAICompanyDiscoveryAdapter } from '@/adapters/llm/OpenAICompanyDisco
 import { OpenAIChatAssistantAdapter } from '@/adapters/llm/OpenAIChatAssistantAdapter'
 import { SupabaseCareerProfileRepositoryAdapter } from '@/adapters/db/SupabaseCareerProfileRepositoryAdapter'
 import { SupabaseOnboardingSessionRepositoryAdapter } from '@/adapters/db/SupabaseOnboardingSessionRepositoryAdapter'
+import { AttachResumeToOnboardingSessionUseCase } from '@/application/AttachResumeToOnboardingSessionUseCase'
 import { AskChatUseCase } from '@/application/AskChatUseCase'
 import { CareerPageAdapter } from '@/adapters/career-pages/CareerPageAdapter'
 import { ResolveUserOnboardingStateUseCase } from '@/application/ResolveUserOnboardingStateUseCase'
+import { StartOrResumeOnboardingSessionUseCase } from '@/application/StartOrResumeOnboardingSessionUseCase'
 import { SupabaseResumeRepositoryAdapter } from '@/adapters/db/SupabaseResumeRepositoryAdapter'
 import { SupabaseResumeStorageAdapter } from '@/adapters/storage/SupabaseResumeStorageAdapter'
 import { DiscoverCompaniesUseCase } from '@/application/DiscoverCompaniesUseCase'
@@ -73,3 +75,30 @@ export const resolveUserOnboardingStateUseCase = lazyExecute((() => {
 
   return new ResolveUserOnboardingStateUseCase(careerProfiles, onboardingSessions)
 }) satisfies () => ResolveUserOnboardingStateUseCase)
+
+export const startOrResumeOnboardingSessionUseCase = lazyExecute((() => {
+  const onboardingSessions = new SupabaseOnboardingSessionRepositoryAdapter(
+    env.supabase.url(),
+    env.supabase.serviceRoleKey(),
+  )
+
+  return new StartOrResumeOnboardingSessionUseCase(onboardingSessions)
+}) satisfies () => StartOrResumeOnboardingSessionUseCase)
+
+export const attachResumeToOnboardingSessionUseCase = lazyExecute((() => {
+  const resumeRepository = new SupabaseResumeRepositoryAdapter(
+    env.supabase.url(),
+    env.supabase.serviceRoleKey(),
+  )
+  const resumeStorage = new SupabaseResumeStorageAdapter(
+    env.supabase.url(),
+    env.supabase.serviceRoleKey(),
+  )
+  const onboardingSessions = new SupabaseOnboardingSessionRepositoryAdapter(
+    env.supabase.url(),
+    env.supabase.serviceRoleKey(),
+  )
+  const uploadResume = new UploadResumeUseCase(resumeStorage, resumeRepository)
+
+  return new AttachResumeToOnboardingSessionUseCase(uploadResume, onboardingSessions)
+}) satisfies () => AttachResumeToOnboardingSessionUseCase)
