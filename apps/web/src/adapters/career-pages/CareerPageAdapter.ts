@@ -192,7 +192,7 @@ async function fetchAshbyJobs(url: string): Promise<AttemptResult<CareerPageErro
   return { success: true, error: null, value: { jobs, atsProvider: 'ashby' } }
 }
 
-function extractAshbySlug(url: string): string | null {
+export function extractAshbySlug(url: string): string | null {
   try {
     const parsed = new URL(url)
     if (!parsed.hostname.toLowerCase().includes('ashbyhq.com')) return null
@@ -241,7 +241,7 @@ async function fetchPersonioJobs(url: string): Promise<AttemptResult<CareerPageE
   return { success: true, error: null, value: { jobs, atsProvider: 'personio' } }
 }
 
-function extractPersonioSlug(url: string): string | null {
+export function extractPersonioSlug(url: string): string | null {
   try {
     const host = new URL(url).hostname.toLowerCase()
     // Pattern: {slug}.jobs.personio.de or {slug}.jobs.personio.com
@@ -252,7 +252,7 @@ function extractPersonioSlug(url: string): string | null {
   }
 }
 
-function parsePersonioXml(xml: string): JobListing[] {
+export function parsePersonioXml(xml: string): JobListing[] {
   const jobs: JobListing[] = []
   const positionRegex = /<position>([\s\S]*?)<\/position>/gi
   let match: RegExpExecArray | null
