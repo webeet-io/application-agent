@@ -1,5 +1,6 @@
 import type { ICareerPagePort, CareerPageResult, CareerPageError, JobListing } from '@/ports/outbound/ICareerPagePort'
 import type { AttemptResult, ATSProvider } from '@ceevee/types'
+import { detectATSProviderFromUrl } from '@/domain/ats-provider-detection'
 
 type JsonValue = string | number | boolean | null | JsonObject | JsonValue[]
 interface JsonObject {
@@ -8,7 +9,7 @@ interface JsonObject {
 
 export class CareerPageAdapter implements ICareerPagePort {
   async fetchJobs(url: string, provider?: ATSProvider): Promise<AttemptResult<CareerPageError, CareerPageResult>> {
-    const detectedProvider = provider && provider !== 'unknown' ? provider : detectProviderFromUrl(url)
+    const detectedProvider = provider && provider !== 'unknown' ? provider : detectATSProviderFromUrl(url).provider
 
     if (detectedProvider === 'greenhouse') {
       return fetchGreenhouseJobs(url)
@@ -214,21 +215,6 @@ function extractLeverCompany(url: string): string | null {
   }
 }
 
-function detectProviderFromUrl(url: string): ATSProvider {
-  try {
-    const host = new URL(url).hostname.toLowerCase()
-    if (host.includes('greenhouse.io')) return 'greenhouse'
-    if (host.includes('lever.co')) return 'lever'
-    if (host.includes('workday') || host.includes('myworkdayjobs')) return 'workday'
-    if (host.includes('ashbyhq.com')) return 'ashby'
-    if (host.includes('personio')) return 'personio'
-    if (host.includes('softgarden')) return 'softgarden'
-    if (host.includes('dvinci')) return 'dvinci'
-    return 'unknown'
-  } catch {
-    return 'unknown'
-  }
-}
 
 function extractJobsFromJsonLd(html: string, baseUrl: string): { jobs: JobListing[]; hadParseError: boolean } {
   const scriptRegex = /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi
