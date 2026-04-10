@@ -9,9 +9,20 @@ function isPublicPath(pathname: string) {
   return false
 }
 
-export async function middleware(request: NextRequest) {
-  const { response, user } = await updateSession(request)
+export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname
+
+  // If a PKCE code lands on any page outside /auth/, forward it to the
+  // callback handler. This happens when Supabase uses a bare origin as
+  // redirect_to and appends ?code= to it instead of to /auth/callback.
+  const code = request.nextUrl.searchParams.get('code')
+  if (code && !pathname.startsWith('/auth/')) {
+    const callbackUrl = new URL('/auth/callback', request.url)
+    callbackUrl.searchParams.set('code', code)
+    return NextResponse.redirect(callbackUrl)
+  }
+
+  const { response, user } = await updateSession(request)
 
   if (isPublicPath(pathname)) return response
 

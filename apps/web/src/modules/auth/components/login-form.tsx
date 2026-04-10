@@ -70,16 +70,21 @@ export function LoginForm({ initialError }: { initialError?: string | null }) {
     e.preventDefault()
     setStatus('magic-loading')
     setError(null)
-    const supabase = createClient()
-    const { error: authError } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
-    })
-    if (authError) {
+    try {
+      const supabase = createClient()
+      const { error: authError } = await supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      })
+      if (authError) {
+        setStatus('idle')
+        setError(authError.message)
+      } else {
+        setStatus('magic-sent')
+      }
+    } catch (err) {
       setStatus('idle')
-      setError(authError.message)
-    } else {
-      setStatus('magic-sent')
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
     }
   }
 
