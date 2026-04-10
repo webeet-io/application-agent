@@ -126,8 +126,8 @@ export default async function OnboardingPage() {
             <h2 className="mt-2 text-[1.45rem] leading-tight text-[#221914]">Resume upload</h2>
           </div>
           <p className="m-0 text-[0.98rem] leading-[1.7] text-[#594b41]">
-            The UI is ready for an upload-or-skip entry point. The backend can later connect PDF
-            storage, text extraction, and onboarding session updates behind this step.
+            The upload step now stores the PDF, extracts resume text when possible, and saves both
+            into the onboarding session before the guided chat continues.
           </p>
           <OnboardingEntryActions
             status={onboardingStateResult.value.status}

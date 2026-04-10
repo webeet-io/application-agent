@@ -3,6 +3,7 @@ import type {
   IOnboardingSessionRepositoryPort,
   OnboardingSessionRepositoryError,
 } from '@/ports/outbound/IOnboardingSessionRepositoryPort'
+import type { IResumeTextExtractorPort } from '@/ports/outbound/IResumeTextExtractorPort'
 import type { UploadResumeInput } from '@/application/UploadResumeUseCase'
 import { UploadResumeUseCase } from '@/application/UploadResumeUseCase'
 
@@ -33,6 +34,7 @@ export class AttachResumeToOnboardingSessionUseCase {
   constructor(
     private readonly uploadResume: UploadResumeUseCase,
     private readonly onboardingSessions: IOnboardingSessionRepositoryPort,
+    private readonly resumeTextExtractor: IResumeTextExtractorPort,
   ) {}
 
   async execute(
@@ -53,10 +55,17 @@ export class AttachResumeToOnboardingSessionUseCase {
       return { success: false, error: uploadResult.error, value: null }
     }
 
+    const resumeTextResult = await this.resumeTextExtractor.extract({
+      mimeType: input.mimeType,
+      content: input.content,
+    })
+
+    const resumeText = resumeTextResult.success ? resumeTextResult.value.text : null
+
     const sessionResult = await this.onboardingSessions.attachResume({
       sessionId: input.sessionId,
       resumeId: uploadResult.value.id,
-      resumeText: null,
+      resumeText,
       nextStep: 'guided_chat',
     })
 

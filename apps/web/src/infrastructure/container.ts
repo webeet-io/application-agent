@@ -8,6 +8,7 @@ import { SupabaseCareerProfileRepositoryAdapter } from '@/adapters/db/SupabaseCa
 import { SupabaseOnboardingChatMessageRepositoryAdapter } from '@/adapters/db/SupabaseOnboardingChatMessageRepositoryAdapter'
 import { SupabaseOnboardingSessionRepositoryAdapter } from '@/adapters/db/SupabaseOnboardingSessionRepositoryAdapter'
 import { OpenAIOnboardingAssistantAdapter } from '@/adapters/llm/OpenAIOnboardingAssistantAdapter'
+import { PdfParseResumeTextExtractorAdapter } from '@/adapters/resume/PdfParseResumeTextExtractorAdapter'
 import { AdvanceOnboardingChatUseCase } from '@/application/AdvanceOnboardingChatUseCase'
 import { AttachResumeToOnboardingSessionUseCase } from '@/application/AttachResumeToOnboardingSessionUseCase'
 import { AskChatUseCase } from '@/application/AskChatUseCase'
@@ -103,9 +104,14 @@ export const attachResumeToOnboardingSessionUseCase = lazyExecute((() => {
     env.supabase.url(),
     env.supabase.serviceRoleKey(),
   )
+  const resumeTextExtractor = new PdfParseResumeTextExtractorAdapter()
   const uploadResume = new UploadResumeUseCase(resumeStorage, resumeRepository)
 
-  return new AttachResumeToOnboardingSessionUseCase(uploadResume, onboardingSessions)
+  return new AttachResumeToOnboardingSessionUseCase(
+    uploadResume,
+    onboardingSessions,
+    resumeTextExtractor,
+  )
 }) satisfies () => AttachResumeToOnboardingSessionUseCase)
 
 export const listOnboardingChatMessagesUseCase = lazyExecute((() => {

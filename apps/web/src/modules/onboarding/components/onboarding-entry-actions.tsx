@@ -165,8 +165,8 @@ export function OnboardingEntryActions({
       </div>
 
       <p className="m-0 text-[0.92rem] leading-[1.65] text-[#6d6055]">
-        Resume parsing into structured text is still the next backend step. For now, the upload is
-        already anchored to the onboarding session and advances the flow.
+        On upload, the PDF is now attached to the onboarding session and parsed into plain text when
+        extraction succeeds, so guided chat and completion can use real resume context.
       </p>
 
       {error ? (
