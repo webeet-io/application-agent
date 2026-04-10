@@ -1,6 +1,8 @@
 'use client'
 
 import { FormEvent, useEffect, useRef } from 'react'
+import Image from 'next/image'
+import logo from '@/assets/logo.png'
 import { renderMessageContent } from '@/modules/chat/lib/render-message-content'
 import { useChatThread } from '@/modules/chat/hooks/use-chat-thread'
 import { useVoiceInput } from '@/modules/chat/hooks/use-voice-input'
@@ -53,12 +55,10 @@ export function ChatInterface() {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-background">
+    <div className="flex h-full flex-col bg-background">
       {/* Header */}
       <header className="flex items-center gap-3 border-b border-border bg-background/95 px-6 py-4 backdrop-blur-sm">
-        <div className="flex h-8 w-8 select-none items-center justify-center rounded-lg bg-primary text-xs font-bold text-primary-foreground">
-          CV
-        </div>
+        <Image src={logo} alt="CeeVee" width={32} height={32} className="rounded-lg" />
         <span className="text-sm font-semibold tracking-tight">CeeVee</span>
         <Badge variant="secondary">AI Assistant</Badge>
       </header>
@@ -68,9 +68,7 @@ export function ChatInterface() {
         <div className="mx-auto max-w-3xl space-y-4 px-4 py-6">
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center py-24 text-center">
-              <div className="mb-5 flex h-14 w-14 select-none items-center justify-center rounded-2xl bg-primary text-xl font-bold text-primary-foreground">
-                CV
-              </div>
+              <Image src={logo} alt="CeeVee" width={56} height={56} className="mb-5 rounded-2xl" />
               <h2 className="mb-2 text-xl font-semibold text-foreground">How can I help you?</h2>
               <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
                 Ask me about job opportunities, resume feedback, or career guidance.

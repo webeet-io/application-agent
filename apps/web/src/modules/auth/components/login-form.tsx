@@ -1,11 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { BarChart3, Mail, MailCheck, Search, Zap } from 'lucide-react'
+import logo from '@/assets/logo.png'
 
 const FEATURES = [
   { Icon: Zap, label: 'Instant job matching based on your profile' },
@@ -120,9 +122,7 @@ export function LoginForm({ initialError }: { initialError?: string | null }) {
         </div>
 
         <div className="relative z-10 flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/20 bg-white/12 text-sm font-bold backdrop-blur-sm">
-            CV
-          </div>
+          <Image src={logo} alt="CeeVee" width={36} height={36} className="rounded-xl" />
           <span className="text-base font-semibold tracking-tight">CeeVee</span>
         </div>
 
@@ -154,9 +154,7 @@ export function LoginForm({ initialError }: { initialError?: string | null }) {
       <div className="flex flex-1 flex-col items-center justify-center bg-background px-6 py-16">
         {/* Mobile logo */}
         <div className="mb-10 flex items-center gap-2.5 lg:hidden">
-          <div className="flex h-8 w-8 select-none items-center justify-center rounded-lg bg-primary text-xs font-bold text-primary-foreground">
-            CV
-          </div>
+          <Image src={logo} alt="CeeVee" width={32} height={32} className="rounded-lg" />
           <span className="text-sm font-semibold">CeeVee</span>
         </div>
 
