@@ -65,7 +65,6 @@ export function LoginForm({ initialError }: { initialError?: string | null }) {
       setStatus('idle')
       setError(authError.message)
     }
-    // On success the browser navigates away — status stays 'google-loading'
   }
 
   async function handleMagicLink(e: React.FormEvent) {
@@ -92,11 +91,13 @@ export function LoginForm({ initialError }: { initialError?: string | null }) {
 
   return (
     <div className="flex min-h-screen font-sans">
-      {/* ── Left: Brand panel ── */}
-      <div className="relative hidden overflow-hidden bg-[#2d3855] text-white lg:flex lg:w-[480px] lg:shrink-0 lg:flex-col lg:p-12">
+
+      {/* ── Left: Brand panel (50%) ── */}
+      <div className="relative hidden overflow-hidden bg-[#69bc8c] text-white lg:flex lg:w-1/2 lg:shrink-0 lg:flex-col lg:p-14">
+        {/* Background decoration */}
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -right-24 -top-24 h-[460px] w-[460px] rounded-full bg-[#69bc8c]/22 blur-[130px]" />
-          <div className="absolute -bottom-24 -left-24 h-[380px] w-[380px] rounded-full bg-[#a45674]/18 blur-[110px]" />
+          <div className="absolute -right-24 -top-24 h-[460px] w-[460px] rounded-full bg-white/15 blur-[130px]" />
+          <div className="absolute -bottom-24 -left-24 h-[380px] w-[380px] rounded-full bg-[#a45674]/25 blur-[110px]" />
           <div
             className="absolute inset-0 opacity-[0.07]"
             style={{
@@ -115,47 +116,51 @@ export function LoginForm({ initialError }: { initialError?: string | null }) {
                 right: -(size / 2),
                 top: '50%',
                 transform: 'translateY(-50%)',
-                opacity: 0.14 - i * 0.028,
+                opacity: 0.18 - i * 0.03,
               }}
             />
           ))}
         </div>
 
+        {/* Logo */}
         <div className="relative z-10 flex items-center gap-3">
-          <Image src={logo} alt="CeeVee" width={36} height={36} className="rounded-xl" />
-          <span className="text-base font-semibold tracking-tight">CeeVee</span>
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white p-2 shadow-md">
+            <Image src={logo} alt="CeeVee" width={44} height={44} className="rounded-xl" />
+          </div>
+          <span className="text-2xl font-bold tracking-tight">CeeVee</span>
         </div>
 
+        {/* Copy */}
         <div className="relative z-10 mt-auto">
-          <h1 className="text-[2.1rem] font-bold leading-[1.18] tracking-tight">
+          <h1 className="text-[2.6rem] font-bold leading-[1.15] tracking-tight">
             Your AI-powered<br />career companion
           </h1>
-          <p className="mt-4 max-w-[300px] text-sm leading-relaxed text-white/65">
+          <p className="mt-4 max-w-[340px] text-sm leading-relaxed text-white/80">
             Discover opportunities, match your skills, and get personalised guidance — all in one place.
           </p>
           <div className="mt-8 space-y-3">
             {FEATURES.map(({ Icon, label }) => (
               <div key={label} className="flex items-center gap-3">
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/10">
-                  <Icon className="h-3.5 w-3.5 text-white/80" />
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/20 bg-white/15">
+                  <Icon className="h-3.5 w-3.5 text-white/90" />
                 </div>
-                <span className="text-sm text-white/75">{label}</span>
+                <span className="text-sm text-white/80">{label}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <p className="relative z-10 mt-12 text-xs text-white/30">
+        <p className="relative z-10 mt-12 text-xs text-white/40">
           © {new Date().getFullYear()} CeeVee · Built for the modern job seeker
         </p>
       </div>
 
-      {/* ── Right: Form panel ── */}
+      {/* ── Right: Form panel (50%) ── */}
       <div className="flex flex-1 flex-col items-center justify-center bg-background px-6 py-16">
-        {/* Mobile logo */}
-        <div className="mb-10 flex items-center gap-2.5 lg:hidden">
-          <Image src={logo} alt="CeeVee" width={32} height={32} className="rounded-lg" />
-          <span className="text-sm font-semibold">CeeVee</span>
+        {/* Mobile logo — bigger + more breathing room above form */}
+        <div className="mb-16 flex flex-col items-center gap-3 lg:hidden">
+          <Image src={logo} alt="CeeVee" width={56} height={56} className="rounded-2xl" />
+          <span className="text-3xl font-bold tracking-tight text-foreground">CeeVee</span>
         </div>
 
         <div className="w-full max-w-[360px]">
@@ -186,9 +191,9 @@ export function LoginForm({ initialError }: { initialError?: string | null }) {
             /* ── Sign-in form ── */
             <>
               <div className="mb-8">
-                <h2 className="text-2xl font-bold tracking-tight text-foreground">Welcome back</h2>
+                <h2 className="text-2xl font-bold tracking-tight text-foreground">Welcome</h2>
                 <p className="mt-1.5 text-sm text-muted-foreground">
-                  Sign in to your CeeVee workspace
+                  Sign in to continue
                 </p>
               </div>
 

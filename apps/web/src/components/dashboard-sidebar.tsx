@@ -62,7 +62,10 @@ export function DashboardSidebar({ username }: Props) {
       >
         {!collapsed && (
           <>
-            <Image src={logo} alt="CeeVee" width={28} height={28} className="rounded-md" />
+            <div className="flex items-center gap-2">
+              <Image src={logo} alt="CeeVee" width={28} height={28} className="rounded-md" />
+              <span className="text-base font-bold tracking-tight text-white">CeeVee</span>
+            </div>
             <button
               onClick={toggle}
               aria-label="Collapse sidebar"
