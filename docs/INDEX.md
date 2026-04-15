@@ -10,4 +10,5 @@
 - `docs/google-authentication.md` — detailed Google OAuth + Supabase authentication guide
 
 ## Features
+- `docs/opportunity-feed-ui.md`
 - `docs/features/INDEX.md`
