@@ -32,10 +32,10 @@ The current source files are:
 
 ## Current Port/Adapter Shape
 
-This UI module does not define a formal `src/ports/outbound/*` port yet because it does not talk to an external system. Its boundary is still explicit:
+This UI module does not define a formal infrastructure port in `src/ports/outbound/*` because it does not talk to an external system directly. Its boundary is still explicit through component-level input and output contracts:
 
 - inbound UI port: `OpportunityFeedProps`
-- outbound UI port: `OpportunityFeedOutputPort`
+- outbound UI callback boundary: `OpportunityFeedOutputPort`
 - current inbound adapter: `app/(dashboard)/opportunities/page.tsx`
 - current data adapter: `mock-opportunities.ts`
 - functional core for presentation rules: `opportunity-feed-model.ts`
@@ -58,9 +58,13 @@ The UI receives opportunities through component props.
 ```typescript
 type OpportunityFeedProps = {
   opportunities: Opportunity[]
+  resultSetId?: string
   searchPrompt?: string
+  outputPort?: OpportunityFeedOutputPort
 }
 ```
+
+`resultSetId` is optional but recommended for real discovery results. It lets the feed reset local pending/error/applied state when #14 returns a new search result, even if some jobs have the same ids as a previous result set.
 
 `searchPrompt` is optional. When provided, it should be the user's discovery prompt from issue #14. When omitted, the UI labels the screen as a mocked preview rather than pretending a real search happened.
 
@@ -301,6 +305,7 @@ When application-status persistence is implemented, the UI should not write dire
 ```typescript
 type OpportunityFeedProps = {
   opportunities: Opportunity[]
+  resultSetId?: string
   searchPrompt?: string
   outputPort?: OpportunityFeedOutputPort
 }
@@ -342,8 +347,8 @@ The UI handles these edge cases:
 - duplicate clicks are ignored while a mark-applied request is pending
 - already-applied opportunities cannot be marked again
 - output-port failures are shown inline on the card
-- unexpected output-port exceptions are caught and displayed as tracker-unavailable errors
-- incoming opportunity-set changes reset local pending/error/applied state
+- unexpected output-port exceptions are caught and displayed as generic tracker-unavailable errors
+- incoming opportunity-set changes reset local pending/error/applied state, with `resultSetId` and `searchPrompt` included in the reset key
 - missing `applyUrl` disables the external apply button instead of rendering a fake link
 
 The outbound payload is built by a pure helper:

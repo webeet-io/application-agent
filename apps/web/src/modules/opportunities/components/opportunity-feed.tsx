@@ -21,6 +21,7 @@ import type {
 
 type OpportunityFeedProps = {
   opportunities: Opportunity[]
+  resultSetId?: string
   searchPrompt?: string
   outputPort?: OpportunityFeedOutputPort
 }
@@ -51,10 +52,14 @@ function getMatchTone(matchBand: OpportunityMatchBand) {
 
 export function OpportunityFeed({
   opportunities: initialOpportunities,
+  resultSetId,
   searchPrompt,
   outputPort,
 }: OpportunityFeedProps) {
-  const opportunitySetKey = useMemo(() => getOpportunitySetKey(initialOpportunities), [initialOpportunities])
+  const opportunitySetKey = useMemo(
+    () => getOpportunitySetKey(initialOpportunities, { resultSetId, searchPrompt }),
+    [initialOpportunities, resultSetId, searchPrompt]
+  )
   const [appliedIds, setAppliedIds] = useState(() => getInitialAppliedIds(initialOpportunities))
   const [pendingAppliedIds, setPendingAppliedIds] = useState(() => new Set<string>())
   const [applyErrors, setApplyErrors] = useState<Record<string, string>>({})
@@ -99,11 +104,11 @@ export function OpportunityFeed({
       return remaining
     })
 
-    const result = await outputPort.markApplied(buildMarkOpportunityAppliedInput(opportunity)).catch((error: unknown) => ({
+    const result = await outputPort.markApplied(buildMarkOpportunityAppliedInput(opportunity)).catch(() => ({
       success: false as const,
       error: {
         type: 'tracker_unavailable' as const,
-        message: error instanceof Error ? error.message : 'Tracker is unavailable right now.',
+        message: 'Tracker is unavailable right now.',
       },
       value: null,
     }))

@@ -75,7 +75,19 @@ describe('opportunity feed model', () => {
         { ...baseOpportunity, id: 'a', applied: true },
         { ...baseOpportunity, id: 'b', applied: false },
       ])
-    ).toBe('a:true|b:false')
+    ).toBe('no-result-set::no-search-prompt::a:true|b:false')
+  })
+
+  it('includes result-set identity in the opportunity set key', () => {
+    expect(
+      getOpportunitySetKey(
+        [
+          { ...baseOpportunity, id: 'a', applied: false },
+          { ...baseOpportunity, id: 'b', applied: false },
+        ],
+        { resultSetId: 'discovery-1', searchPrompt: 'healthcare startups in Berlin' }
+      )
+    ).toBe('discovery-1::healthcare startups in Berlin::a:false|b:false')
   })
 
   it('builds the outbound applied payload without UI-only fields', () => {

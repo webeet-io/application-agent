@@ -25,6 +25,11 @@ export type OpportunityFeedSummary = {
   appliedCount: number
 }
 
+export type OpportunitySetIdentity = {
+  resultSetId?: string
+  searchPrompt?: string
+}
+
 export type MarkOpportunityAppliedInput = {
   opportunityId: string
   jobId?: JobId

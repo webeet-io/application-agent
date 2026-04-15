@@ -3,10 +3,17 @@ import type {
   Opportunity,
   OpportunityFeedSummary,
   OpportunityMatchBand,
+  OpportunitySetIdentity,
 } from './types'
 
-export function getOpportunitySetKey(opportunities: Opportunity[]): string {
-  return opportunities.map((opportunity) => `${opportunity.id}:${opportunity.applied}`).join('|')
+export function getOpportunitySetKey(
+  opportunities: Opportunity[],
+  identity: OpportunitySetIdentity = {}
+): string {
+  const opportunityKey = opportunities.map((opportunity) => `${opportunity.id}:${opportunity.applied}`).join('|')
+  return [identity.resultSetId ?? 'no-result-set', identity.searchPrompt ?? 'no-search-prompt', opportunityKey].join(
+    '::'
+  )
 }
 
 export function getInitialAppliedIds(opportunities: Opportunity[]): Set<string> {
