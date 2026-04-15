@@ -217,7 +217,14 @@ The summary is derived from the inbound `Opportunity[]` and is displayed in the 
 
 ## Outbound UI Contract
 
-Current outbound behavior is intentionally minimal.
+The Opportunity Feed has two outbound interactions:
+
+- opening the external job application page
+- marking an opportunity as applied
+
+Per `VISION.md`, the product-level consumer of `Mark applied` is the Application Assistant / Tracker. Once persistence exists, an applied opportunity enters the user's application history. Later outcomes from that tracker, such as interview, rejection, no response, offer, or withdrawal, become input for insights, mentor behavior, and recurring skill-gap analysis.
+
+Current implemented outbound behavior is intentionally minimal because issue #13 is UI-only.
 
 ### Apply Link
 
@@ -226,6 +233,8 @@ If `applyUrl` exists:
 ```text
 User clicks Apply
   -> browser opens applyUrl in a new tab
+  -> the user applies on the external company or ATS site
+  -> the user returns to CeeVee and marks the opportunity as applied
 ```
 
 If `applyUrl` is missing:
@@ -235,6 +244,12 @@ UI shows disabled "Apply link pending"
 ```
 
 The UI does not invent fake URLs. Mock opportunities therefore omit `applyUrl` until real scrape data is available.
+
+Current consumer:
+- the user's browser opens an external company or ATS application page
+
+Future internal consumer:
+- after the user confirms the application, CeeVee should record that event through the application tracker flow
 
 ### Applied Action
 
@@ -251,6 +266,17 @@ This is local presentation state only. It is not persisted.
 
 The component resets that local state when the incoming opportunity set changes, so a future discovery result from issue #14 does not inherit stale applied IDs from the previous result set.
 
+Current consumer:
+- the `OpportunityFeed` component itself consumes this action to update visible UI state
+
+Future product consumer:
+- Application Assistant / Tracker
+
+Future technical consumers:
+- an application use case that creates or updates an `Application`
+- `IApplicationRepositoryPort`, implemented by a persistence adapter such as Supabase
+- downstream mentor / insights features that read application history
+
 ## Future Outbound Port
 
 When application-status persistence is implemented, the UI should not write directly to Supabase or any database adapter. The likely future boundary is a callback or use case-backed adapter such as:
@@ -259,26 +285,52 @@ When application-status persistence is implemented, the UI should not write dire
 type OpportunityFeedProps = {
   opportunities: Opportunity[]
   searchPrompt?: string
-  onMarkApplied?: (opportunityId: string) => Promise<void>
+  onMarkApplied?: (input: MarkOpportunityAppliedInput) => Promise<MarkOpportunityAppliedResult>
+}
+
+type MarkOpportunityAppliedInput = {
+  opportunityId: string
+  jobId?: string
+  resumeId?: string
+}
+
+type MarkOpportunityAppliedResult = {
+  applicationId: string
+  status: 'applied'
 }
 ```
 
 That callback should be provided by a route/page-level adapter or a server action. The UI component should remain a thin presentation layer.
 
-Possible future application port:
+The existing repository port for application persistence is `IApplicationRepositoryPort`:
 
 ```typescript
-type MarkOpportunityAppliedInput = {
-  opportunityId: string
-  userId: string
-}
-
 interface IApplicationRepositoryPort {
-  markApplied(input: MarkOpportunityAppliedInput): Promise<AttemptResult<ApplicationRepositoryError, Application>>
+  findById(id: ApplicationId): Promise<AttemptResult<ApplicationRepositoryError, Application>>
+  findByUser(userId: string): Promise<AttemptResult<ApplicationRepositoryError, Application[]>>
+  save(application: Application): Promise<AttemptResult<ApplicationRepositoryError, void>>
+  updateStatus(id: ApplicationId, status: ApplicationStatus): Promise<AttemptResult<ApplicationRepositoryError, void>>
+  delete(id: ApplicationId): Promise<AttemptResult<ApplicationRepositoryError, void>>
 }
 ```
 
-That port already belongs conceptually outside this UI module. The feed should only trigger the action and render the resulting state.
+The future route/use-case layer should translate `MarkOpportunityAppliedInput` into an `Application` save or status update. That port already belongs outside this UI module. The feed should only trigger the action and render the resulting state.
+
+### Intended Product Flow After Apply
+
+```text
+User clicks Apply
+  -> external applyUrl opens
+  -> user submits the application outside CeeVee
+  -> user returns and clicks Mark applied
+  -> Opportunity Feed emits MarkOpportunityAppliedInput
+  -> route/server action calls application use case
+  -> use case writes Application(status: 'applied') through IApplicationRepositoryPort
+  -> Tracker consumes application history and shows the new application
+  -> future outcomes feed mentor, insights, and skill-gap features
+```
+
+This matches `VISION.md`: "Mark an opportunity as Applied — it enters your application tracker."
 
 ## Empty State
 
