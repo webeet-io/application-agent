@@ -9,7 +9,6 @@ export const mockedOpportunities: Opportunity[] = [
     matchPercentage: 94,
     matchReason: 'Strong React, product UI, and healthcare domain overlap.',
     sourceCompanyReason: 'Healthcare startup in Berlin with a small product engineering team.',
-    applyUrl: 'https://example.com/jobs/kometa-senior-frontend',
     applied: false,
   },
   {
@@ -20,7 +19,6 @@ export const mockedOpportunities: Opportunity[] = [
     matchPercentage: 86,
     matchReason: 'Matches your full-stack profile and early-stage startup preference.',
     sourceCompanyReason: 'AI tooling company hiring across European remote teams.',
-    applyUrl: 'https://example.com/jobs/northline-product-engineer',
     applied: false,
   },
   {
@@ -31,7 +29,6 @@ export const mockedOpportunities: Opportunity[] = [
     matchPercentage: 72,
     matchReason: 'Relevant frontend work, but less direct product ownership.',
     sourceCompanyReason: 'Patient operations platform with an active engineering hiring page.',
-    applyUrl: 'https://example.com/jobs/luma-platform-frontend',
     applied: true,
   },
 ]

@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import type { Opportunity } from './types'
 import {
+  getInitialAppliedIds,
   getOpportunityMatchBand,
+  getOpportunitySetKey,
   rankOpportunities,
   summarizeOpportunities,
 } from './opportunity-feed-model'
@@ -13,7 +15,6 @@ const baseOpportunity: Opportunity = {
   location: 'Berlin',
   matchPercentage: 80,
   matchReason: 'Relevant frontend experience.',
-  applyUrl: 'https://example.com/base',
   applied: false,
 }
 
@@ -56,5 +57,23 @@ describe('opportunity feed model', () => {
       topMatchPercentage: 0,
       appliedCount: 0,
     })
+  })
+
+  it('builds initial applied state from incoming opportunities', () => {
+    const appliedIds = getInitialAppliedIds([
+      { ...baseOpportunity, id: 'a', applied: true },
+      { ...baseOpportunity, id: 'b', applied: false },
+    ])
+
+    expect([...appliedIds]).toEqual(['a'])
+  })
+
+  it('includes applied values in the opportunity set key', () => {
+    expect(
+      getOpportunitySetKey([
+        { ...baseOpportunity, id: 'a', applied: true },
+        { ...baseOpportunity, id: 'b', applied: false },
+      ])
+    ).toBe('a:true|b:false')
   })
 })

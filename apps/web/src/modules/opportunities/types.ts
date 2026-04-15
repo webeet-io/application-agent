@@ -7,7 +7,7 @@ export type Opportunity = {
   location: string
   matchPercentage: number
   matchReason: string
-  applyUrl: string
+  applyUrl?: string
   applied: boolean
   sourceCompanyReason?: string
 }

@@ -1,10 +1,16 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ArrowUpRight, Check, MapPin, RefreshCw, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { getOpportunityMatchBand, rankOpportunities, summarizeOpportunities } from '../opportunity-feed-model'
+import {
+  getInitialAppliedIds,
+  getOpportunityMatchBand,
+  getOpportunitySetKey,
+  rankOpportunities,
+  summarizeOpportunities,
+} from '../opportunity-feed-model'
 import type { Opportunity, OpportunityMatchBand } from '../types'
 
 type OpportunityFeedProps = {
@@ -37,9 +43,12 @@ function getMatchTone(matchBand: OpportunityMatchBand) {
 }
 
 export function OpportunityFeed({ opportunities: initialOpportunities, searchPrompt }: OpportunityFeedProps) {
-  const [appliedIds, setAppliedIds] = useState(
-    () => new Set(initialOpportunities.filter((opportunity) => opportunity.applied).map(({ id }) => id))
-  )
+  const opportunitySetKey = useMemo(() => getOpportunitySetKey(initialOpportunities), [initialOpportunities])
+  const [appliedIds, setAppliedIds] = useState(() => getInitialAppliedIds(initialOpportunities))
+
+  useEffect(() => {
+    setAppliedIds(getInitialAppliedIds(initialOpportunities))
+  }, [opportunitySetKey])
 
   const opportunities = useMemo(() => {
     const opportunitiesWithAppliedState = initialOpportunities.map((opportunity) => ({
@@ -90,9 +99,7 @@ export function OpportunityFeed({ opportunities: initialOpportunities, searchPro
             <p className="text-sm font-medium text-brand-mauve">Ranked from your career profile</p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">Opportunities</h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-              {searchPrompt
-                ? `Search: ${searchPrompt}`
-                : 'Healthcare startups in Berlin, small engineering team.'}
+              {searchPrompt ? `Search: ${searchPrompt}` : 'Preview feed using mocked discovery results.'}
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
@@ -169,12 +176,18 @@ export function OpportunityFeed({ opportunities: initialOpportunities, searchPro
                   </div>
 
                   <div className="flex flex-col gap-2 sm:flex-row md:flex-col">
-                    <Button asChild variant="outline" className="w-full">
-                      <a href={opportunity.applyUrl} target="_blank" rel="noreferrer">
-                        Apply
-                        <ArrowUpRight className="h-4 w-4" />
-                      </a>
-                    </Button>
+                    {opportunity.applyUrl ? (
+                      <Button asChild variant="outline" className="w-full">
+                        <a href={opportunity.applyUrl} target="_blank" rel="noreferrer">
+                          Apply
+                          <ArrowUpRight className="h-4 w-4" />
+                        </a>
+                      </Button>
+                    ) : (
+                      <Button type="button" variant="outline" className="w-full" disabled>
+                        Apply link pending
+                      </Button>
+                    )}
                     <Button
                       type="button"
                       variant={opportunity.applied ? 'secondary' : 'default'}

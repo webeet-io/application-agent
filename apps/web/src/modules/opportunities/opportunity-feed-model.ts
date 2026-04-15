@@ -1,5 +1,13 @@
 import type { Opportunity, OpportunityFeedSummary, OpportunityMatchBand } from './types'
 
+export function getOpportunitySetKey(opportunities: Opportunity[]): string {
+  return opportunities.map((opportunity) => `${opportunity.id}:${opportunity.applied}`).join('|')
+}
+
+export function getInitialAppliedIds(opportunities: Opportunity[]): Set<string> {
+  return new Set(opportunities.filter((opportunity) => opportunity.applied).map(({ id }) => id))
+}
+
 export function getOpportunityMatchBand(matchPercentage: number): OpportunityMatchBand {
   if (matchPercentage >= 90) return 'excellent'
   if (matchPercentage >= 80) return 'strong'
