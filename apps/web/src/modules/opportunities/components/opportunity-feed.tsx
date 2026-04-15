@@ -1,56 +1,19 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { ArrowUpRight, Check, MapPin, Sparkles } from 'lucide-react'
+import { ArrowUpRight, Check, MapPin, RefreshCw, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { getOpportunityMatchBand, rankOpportunities, summarizeOpportunities } from '../opportunity-feed-model'
+import type { Opportunity, OpportunityMatchBand } from '../types'
 
-type Opportunity = {
-  id: string
-  companyName: string
-  roleTitle: string
-  location: string
-  matchPercentage: number
-  matchReason: string
-  applyUrl: string
-  applied: boolean
+type OpportunityFeedProps = {
+  opportunities: Opportunity[]
+  searchPrompt?: string
 }
 
-const mockedOpportunities: Opportunity[] = [
-  {
-    id: 'kometa-senior-frontend',
-    companyName: 'Kometa Health',
-    roleTitle: 'Senior Frontend Engineer',
-    location: 'Berlin, Germany',
-    matchPercentage: 94,
-    matchReason: 'Strong React, product UI, and healthcare domain overlap.',
-    applyUrl: 'https://example.com/jobs/kometa-senior-frontend',
-    applied: false,
-  },
-  {
-    id: 'northline-product-engineer',
-    companyName: 'Northline AI',
-    roleTitle: 'Product Engineer',
-    location: 'Remote, EU',
-    matchPercentage: 86,
-    matchReason: 'Matches your full-stack profile and early-stage startup preference.',
-    applyUrl: 'https://example.com/jobs/northline-product-engineer',
-    applied: false,
-  },
-  {
-    id: 'luma-platform-frontend',
-    companyName: 'Luma Care',
-    roleTitle: 'Frontend Platform Engineer',
-    location: 'Hamburg, Germany',
-    matchPercentage: 72,
-    matchReason: 'Relevant frontend work, but less direct product ownership.',
-    applyUrl: 'https://example.com/jobs/luma-platform-frontend',
-    applied: true,
-  },
-]
-
-function getMatchTone(matchPercentage: number) {
-  if (matchPercentage >= 90) {
+function getMatchTone(matchBand: OpportunityMatchBand) {
+  if (matchBand === 'excellent') {
     return {
       label: 'Excellent match',
       bar: 'bg-brand-green',
@@ -58,7 +21,7 @@ function getMatchTone(matchPercentage: number) {
     }
   }
 
-  if (matchPercentage >= 80) {
+  if (matchBand === 'strong') {
     return {
       label: 'Strong match',
       bar: 'bg-primary',
@@ -73,19 +36,21 @@ function getMatchTone(matchPercentage: number) {
   }
 }
 
-export function OpportunityFeed() {
+export function OpportunityFeed({ opportunities: initialOpportunities, searchPrompt }: OpportunityFeedProps) {
   const [appliedIds, setAppliedIds] = useState(
-    () => new Set(mockedOpportunities.filter((opportunity) => opportunity.applied).map(({ id }) => id))
+    () => new Set(initialOpportunities.filter((opportunity) => opportunity.applied).map(({ id }) => id))
   )
 
-  const opportunities = useMemo(
-    () =>
-      mockedOpportunities.map((opportunity) => ({
-        ...opportunity,
-        applied: appliedIds.has(opportunity.id),
-      })),
-    [appliedIds]
-  )
+  const opportunities = useMemo(() => {
+    const opportunitiesWithAppliedState = initialOpportunities.map((opportunity) => ({
+      ...opportunity,
+      applied: appliedIds.has(opportunity.id),
+    }))
+
+    return rankOpportunities(opportunitiesWithAppliedState)
+  }, [appliedIds, initialOpportunities])
+
+  const summary = summarizeOpportunities(opportunities)
 
   function markApplied(id: string) {
     setAppliedIds((current) => {
@@ -104,8 +69,14 @@ export function OpportunityFeed() {
           </div>
           <h1 className="text-2xl font-semibold text-foreground">No opportunities yet</h1>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            Try a broader search, add more target locations, or refresh discovery when new roles are available.
+            Try a broader search, add more target locations, or run discovery again when new roles are available.
           </p>
+          <Button asChild className="mt-6">
+            <a href="/">
+              Start a new search
+              <RefreshCw className="h-4 w-4" />
+            </a>
+          </Button>
         </div>
       </div>
     )
@@ -119,30 +90,35 @@ export function OpportunityFeed() {
             <p className="text-sm font-medium text-brand-mauve">Ranked from your career profile</p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">Opportunities</h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Review the strongest roles first, compare match confidence, and keep track of applications.
+              {searchPrompt
+                ? `Search: ${searchPrompt}`
+                : 'Healthcare startups in Berlin, small engineering team.'}
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-3 text-sm sm:flex">
+          <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
             <div className="rounded-md border bg-card px-4 py-3">
-              <p className="font-semibold text-foreground">{opportunities.length}</p>
+              <p className="font-semibold text-foreground">{summary.totalCount}</p>
               <p className="text-muted-foreground">roles found</p>
             </div>
             <div className="rounded-md border bg-card px-4 py-3">
-              <p className="font-semibold text-foreground">
-                {Math.round(
-                  opportunities.reduce((total, opportunity) => total + opportunity.matchPercentage, 0) /
-                    opportunities.length
-                )}
-                %
-              </p>
+              <p className="font-semibold text-foreground">{summary.topMatchPercentage}%</p>
+              <p className="text-muted-foreground">top match</p>
+            </div>
+            <div className="rounded-md border bg-card px-4 py-3">
+              <p className="font-semibold text-foreground">{summary.averageMatchPercentage}%</p>
               <p className="text-muted-foreground">avg. match</p>
+            </div>
+            <div className="rounded-md border bg-card px-4 py-3">
+              <p className="font-semibold text-foreground">{summary.appliedCount}</p>
+              <p className="text-muted-foreground">applied</p>
             </div>
           </div>
         </header>
 
         <section className="flex flex-col gap-4" aria-label="Ranked job opportunities">
           {opportunities.map((opportunity, index) => {
-            const tone = getMatchTone(opportunity.matchPercentage)
+            const matchBand = getOpportunityMatchBand(opportunity.matchPercentage)
+            const tone = getMatchTone(matchBand)
 
             return (
               <article
@@ -171,6 +147,11 @@ export function OpportunityFeed() {
                   </div>
 
                   <p className="mt-4 text-sm leading-6 text-foreground">{opportunity.matchReason}</p>
+                  {opportunity.sourceCompanyReason && (
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                      {opportunity.sourceCompanyReason}
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex flex-col justify-between gap-5">
