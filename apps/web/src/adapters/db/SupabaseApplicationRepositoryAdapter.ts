@@ -1,13 +1,8 @@
 import type { IApplicationRepositoryPort, ApplicationRepositoryError } from '@/ports/outbound/IApplicationRepositoryPort'
 import type { AttemptResult, Application, ApplicationId, ApplicationStatus } from '@ceevee/types'
 import { createClient } from '@/lib/supabase/server'
-import type { IEmbeddingPort } from '@/ports/outbound/IEmbeddingPort'
 
 export class SupabaseApplicationRepositoryAdapter implements IApplicationRepositoryPort {
-  
-  // Inject the embedding port so the adapter can generate vectors itself
-  constructor(private embeddingPort: IEmbeddingPort) {}
-
   async findById(_id: ApplicationId): Promise<AttemptResult<ApplicationRepositoryError, Application>> {
     return { success: false, error: { type: 'db_error', message: 'Not implemented' }, value: null }
   }
@@ -16,14 +11,9 @@ export class SupabaseApplicationRepositoryAdapter implements IApplicationReposit
     return { success: false, error: { type: 'db_error', message: 'Not implemented' }, value: null }
   }
 
-  async save(application: Application): Promise<AttemptResult<ApplicationRepositoryError, void>> {
+  async save(application: Application, embeddingVector?: number[]): Promise<AttemptResult<ApplicationRepositoryError, void>> {
     const supabase = await createClient()
 
-    // 1. Generate the embedding internally before saving
-    const textToEmbed = `Job ID: ${application.jobId}, Notes: ${application.notes || ''}`
-    const embeddingResult = await this.embeddingPort.generate(textToEmbed)
-
-    // 2. Save the application normally
     const { error: appError } = await supabase
       .from('applications')
       .upsert({
@@ -40,15 +30,15 @@ export class SupabaseApplicationRepositoryAdapter implements IApplicationReposit
       return { success: false, error: { type: 'db_error', message: appError.message }, value: null }
     }
 
-    // 3. Save the embedding to the new centralized table
-    if (embeddingResult.success) {
+    if (embeddingVector) {
+      const textToEmbed = `Job ID: ${application.jobId}, Notes: ${application.notes || ''}`
       const { error: embedError } = await supabase
         .from('embeddings')
         .upsert({
           resource_type: 'application',
           resource_id: application.id,
           content: textToEmbed,
-          embedding: embeddingResult.value
+          embedding: embeddingVector
         })
 
       if (embedError) {
@@ -77,7 +67,6 @@ export class SupabaseApplicationRepositoryAdapter implements IApplicationReposit
         return { success: true, error: null, value: [] }
     }
 
-    // Fixed the 'any' type error here!
     const applicationIds = embeddingData.map((row: { resource_id: string }) => row.resource_id)
 
     const { data: appsData, error: appsError } = await supabase

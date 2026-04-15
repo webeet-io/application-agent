@@ -8,11 +8,8 @@ export interface IApplicationRepositoryPort {
   findById(id: ApplicationId): Promise<AttemptResult<ApplicationRepositoryError, Application>>
   findByUser(userId: string): Promise<AttemptResult<ApplicationRepositoryError, Application[]>>
   
-  // Notice that save() no longer takes an embedding parameter!
-  save(application: Application): Promise<AttemptResult<ApplicationRepositoryError, void>>
-  
-  // We must define findSimilar so the Use Case can call it
-  findSimilar(embedding: number[], limit: number): Promise<AttemptResult<ApplicationRepositoryError, Application[]>>
+  // The repository receives the embedding as an optional parameter from the use case
+  save(application: Application, embeddingVector?: number[]): Promise<AttemptResult<ApplicationRepositoryError, void>>
   
   updateStatus(id: ApplicationId, status: ApplicationStatus): Promise<AttemptResult<ApplicationRepositoryError, void>>
   delete(id: ApplicationId): Promise<AttemptResult<ApplicationRepositoryError, void>>
