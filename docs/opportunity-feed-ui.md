@@ -35,10 +35,11 @@ The current source files are:
 This UI module does not define a formal `src/ports/outbound/*` port yet because it does not talk to an external system. Its boundary is still explicit:
 
 - inbound UI port: `OpportunityFeedProps`
+- outbound UI port: `OpportunityFeedOutputPort`
 - current inbound adapter: `app/(dashboard)/opportunities/page.tsx`
 - current data adapter: `mock-opportunities.ts`
 - functional core for presentation rules: `opportunity-feed-model.ts`
-- current output adapter behavior: browser navigation to `applyUrl` when present, plus local `Applied` UI state
+- current output adapter behavior: browser navigation to `applyUrl` when present, plus optional `markApplied` emission to an output port
 
 ### Current Flow
 
@@ -68,6 +69,10 @@ type OpportunityFeedProps = {
 ```typescript
 type Opportunity = {
   id: string
+  jobId?: JobId
+  companyId?: CompanyId
+  resumeId?: ResumeId
+  applicationId?: ApplicationId
   companyName: string
   roleTitle: string
   location: string
@@ -82,6 +87,10 @@ type Opportunity = {
 Field meaning:
 
 - `id`: stable UI identifier for this opportunity. Future real data should prefer a stable job id from the scraper or persistence layer.
+- `jobId`: optional persisted job-listing id. Required by the future tracker persistence flow.
+- `companyId`: optional persisted company id, useful for downstream context and outreach.
+- `resumeId`: optional selected resume id. Required when creating a real `Application` record.
+- `applicationId`: optional existing application id when the opportunity is already tracked.
 - `companyName`: company display name.
 - `roleTitle`: job title to show as the primary card title.
 - `location`: human-readable job location.
@@ -148,12 +157,20 @@ type OpportunityMappingInput = {
   company: DiscoveredCompany
   job: JobListing
   match: MatchResult
+  jobId?: JobId
+  companyId?: CompanyId
+  resumeId?: ResumeId
+  applicationId?: ApplicationId
   applied?: boolean
 }
 
 function mapToOpportunity(input: OpportunityMappingInput): Opportunity {
   return {
     id: stableJobId,
+    jobId: input.jobId,
+    companyId: input.companyId,
+    resumeId: input.resumeId,
+    applicationId: input.applicationId,
     companyName: input.company.name,
     roleTitle: input.job.title,
     location: input.job.location,
@@ -277,30 +294,78 @@ Future technical consumers:
 - `IApplicationRepositoryPort`, implemented by a persistence adapter such as Supabase
 - downstream mentor / insights features that read application history
 
-## Future Outbound Port
+## Implemented UI Outbound Port
 
-When application-status persistence is implemented, the UI should not write directly to Supabase or any database adapter. The likely future boundary is a callback or use case-backed adapter such as:
+When application-status persistence is implemented, the UI should not write directly to Supabase or any database adapter. The implemented UI-level outbound boundary is `OpportunityFeedOutputPort`:
 
 ```typescript
 type OpportunityFeedProps = {
   opportunities: Opportunity[]
   searchPrompt?: string
-  onMarkApplied?: (input: MarkOpportunityAppliedInput) => Promise<MarkOpportunityAppliedResult>
+  outputPort?: OpportunityFeedOutputPort
+}
+
+type OpportunityFeedOutputPort = {
+  markApplied(
+    input: MarkOpportunityAppliedInput
+  ): Promise<AttemptResult<MarkOpportunityAppliedError, MarkOpportunityAppliedResult>>
 }
 
 type MarkOpportunityAppliedInput = {
   opportunityId: string
-  jobId?: string
-  resumeId?: string
+  jobId?: JobId
+  companyId?: CompanyId
+  resumeId?: ResumeId
+  applicationId?: ApplicationId
+  companyName: string
+  roleTitle: string
+  applyUrl?: string
 }
 
+type MarkOpportunityAppliedError =
+  | { type: 'missing_job_reference'; opportunityId: string }
+  | { type: 'missing_resume_reference'; opportunityId: string }
+  | { type: 'already_applied'; opportunityId: string }
+  | { type: 'tracker_unavailable'; message: string }
+
 type MarkOpportunityAppliedResult = {
-  applicationId: string
+  opportunityId: string
+  applicationId?: ApplicationId
   status: 'applied'
 }
 ```
 
-That callback should be provided by a route/page-level adapter or a server action. The UI component should remain a thin presentation layer.
+When `outputPort` is omitted, the component stays in mock/local mode and updates only local UI state. When `outputPort` is present, `Mark applied` emits typed data to that port and waits for an `AttemptResult`.
+
+The UI handles these edge cases:
+
+- duplicate clicks are ignored while a mark-applied request is pending
+- already-applied opportunities cannot be marked again
+- output-port failures are shown inline on the card
+- unexpected output-port exceptions are caught and displayed as tracker-unavailable errors
+- incoming opportunity-set changes reset local pending/error/applied state
+- missing `applyUrl` disables the external apply button instead of rendering a fake link
+
+The outbound payload is built by a pure helper:
+
+```typescript
+function buildMarkOpportunityAppliedInput(opportunity: Opportunity): MarkOpportunityAppliedInput {
+  return {
+    opportunityId: opportunity.id,
+    jobId: opportunity.jobId,
+    companyId: opportunity.companyId,
+    resumeId: opportunity.resumeId,
+    applicationId: opportunity.applicationId,
+    companyName: opportunity.companyName,
+    roleTitle: opportunity.roleTitle,
+    applyUrl: opportunity.applyUrl,
+  }
+}
+```
+
+The eventual tracker adapter can reject the payload with `missing_job_reference` or `missing_resume_reference` until the upstream discovery/scrape/match pipeline supplies persisted job and resume identifiers.
+
+### Existing Persistence Port
 
 The existing repository port for application persistence is `IApplicationRepositoryPort`:
 
@@ -314,7 +379,23 @@ interface IApplicationRepositoryPort {
 }
 ```
 
-The future route/use-case layer should translate `MarkOpportunityAppliedInput` into an `Application` save or status update. That port already belongs outside this UI module. The feed should only trigger the action and render the resulting state.
+The future route/use-case layer should provide an implementation of `OpportunityFeedOutputPort` and translate `MarkOpportunityAppliedInput` into an `Application` save or status update. That persistence port already belongs outside this UI module. The feed should only trigger the action and render the resulting state.
+
+The persisted `Application` model requires:
+
+```typescript
+type Application = {
+  id: ApplicationId
+  userId: string
+  jobId: JobId
+  resumeId: ResumeId
+  status: ApplicationStatus
+  appliedAt: Date | null
+  notes: string | null
+}
+```
+
+In the shared type package, `jobId` and `resumeId` are required on `Application`. They are optional on `Opportunity` only because issue #13 still uses mocked data and can render before persistence exists.
 
 ### Intended Product Flow After Apply
 
@@ -331,6 +412,19 @@ User clicks Apply
 ```
 
 This matches `VISION.md`: "Mark an opportunity as Applied — it enters your application tracker."
+
+## Related GitHub Issues
+
+The outbound contract was checked against related product issues:
+
+- #9 Application tracker: `Mark applied` should create/update application history in Supabase.
+- #10 Application history embeddings: logged applications later receive embeddings for similarity search.
+- #11 Application insights: future opportunities can retrieve similar past applications for guidance.
+- #12 MCP server: exposes `log_application(job_id, resume_id)` as a tool, which matches the same tracker boundary.
+- #17 Direct outreach: outreach sent for an application should be logged alongside formal application status.
+- #4, #5, #26-#30 ATS/scraper work: scraper output must include normalized job listings and direct apply URLs; Opportunity Feed consumes that normalized output rather than parsing ATS-specific data.
+
+This means Opportunity Feed is not the final owner of application state. It is the UI producer of a `markApplied` event that the tracker/application layer consumes.
 
 ## Empty State
 

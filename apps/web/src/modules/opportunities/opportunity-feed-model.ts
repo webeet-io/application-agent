@@ -1,4 +1,9 @@
-import type { Opportunity, OpportunityFeedSummary, OpportunityMatchBand } from './types'
+import type {
+  MarkOpportunityAppliedInput,
+  Opportunity,
+  OpportunityFeedSummary,
+  OpportunityMatchBand,
+} from './types'
 
 export function getOpportunitySetKey(opportunities: Opportunity[]): string {
   return opportunities.map((opportunity) => `${opportunity.id}:${opportunity.applied}`).join('|')
@@ -44,5 +49,18 @@ export function summarizeOpportunities(opportunities: Opportunity[]): Opportunit
     averageMatchPercentage: Math.round(totalMatchPercentage / opportunities.length),
     topMatchPercentage: Math.max(...opportunities.map((opportunity) => opportunity.matchPercentage)),
     appliedCount: opportunities.filter((opportunity) => opportunity.applied).length,
+  }
+}
+
+export function buildMarkOpportunityAppliedInput(opportunity: Opportunity): MarkOpportunityAppliedInput {
+  return {
+    opportunityId: opportunity.id,
+    jobId: opportunity.jobId,
+    companyId: opportunity.companyId,
+    resumeId: opportunity.resumeId,
+    applicationId: opportunity.applicationId,
+    companyName: opportunity.companyName,
+    roleTitle: opportunity.roleTitle,
+    applyUrl: opportunity.applyUrl,
   }
 }

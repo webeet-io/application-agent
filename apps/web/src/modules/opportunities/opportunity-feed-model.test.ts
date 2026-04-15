@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Opportunity } from './types'
 import {
+  buildMarkOpportunityAppliedInput,
   getInitialAppliedIds,
   getOpportunityMatchBand,
   getOpportunitySetKey,
@@ -75,5 +76,27 @@ describe('opportunity feed model', () => {
         { ...baseOpportunity, id: 'b', applied: false },
       ])
     ).toBe('a:true|b:false')
+  })
+
+  it('builds the outbound applied payload without UI-only fields', () => {
+    expect(
+      buildMarkOpportunityAppliedInput({
+        ...baseOpportunity,
+        id: 'opportunity-1',
+        companyName: 'Acme',
+        roleTitle: 'Frontend Engineer',
+        applyUrl: 'https://acme.example/jobs/frontend',
+        sourceCompanyReason: 'Matched by discovery context.',
+      })
+    ).toEqual({
+      opportunityId: 'opportunity-1',
+      jobId: undefined,
+      companyId: undefined,
+      resumeId: undefined,
+      applicationId: undefined,
+      companyName: 'Acme',
+      roleTitle: 'Frontend Engineer',
+      applyUrl: 'https://acme.example/jobs/frontend',
+    })
   })
 })

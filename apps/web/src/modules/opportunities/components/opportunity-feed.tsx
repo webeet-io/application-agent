@@ -5,17 +5,24 @@ import { ArrowUpRight, Check, MapPin, RefreshCw, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import {
+  buildMarkOpportunityAppliedInput,
   getInitialAppliedIds,
   getOpportunityMatchBand,
   getOpportunitySetKey,
   rankOpportunities,
   summarizeOpportunities,
 } from '../opportunity-feed-model'
-import type { Opportunity, OpportunityMatchBand } from '../types'
+import type {
+  MarkOpportunityAppliedError,
+  Opportunity,
+  OpportunityFeedOutputPort,
+  OpportunityMatchBand,
+} from '../types'
 
 type OpportunityFeedProps = {
   opportunities: Opportunity[]
   searchPrompt?: string
+  outputPort?: OpportunityFeedOutputPort
 }
 
 function getMatchTone(matchBand: OpportunityMatchBand) {
@@ -42,12 +49,20 @@ function getMatchTone(matchBand: OpportunityMatchBand) {
   }
 }
 
-export function OpportunityFeed({ opportunities: initialOpportunities, searchPrompt }: OpportunityFeedProps) {
+export function OpportunityFeed({
+  opportunities: initialOpportunities,
+  searchPrompt,
+  outputPort,
+}: OpportunityFeedProps) {
   const opportunitySetKey = useMemo(() => getOpportunitySetKey(initialOpportunities), [initialOpportunities])
   const [appliedIds, setAppliedIds] = useState(() => getInitialAppliedIds(initialOpportunities))
+  const [pendingAppliedIds, setPendingAppliedIds] = useState(() => new Set<string>())
+  const [applyErrors, setApplyErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
     setAppliedIds(getInitialAppliedIds(initialOpportunities))
+    setPendingAppliedIds(new Set())
+    setApplyErrors({})
   }, [opportunitySetKey])
 
   const opportunities = useMemo(() => {
@@ -61,10 +76,55 @@ export function OpportunityFeed({ opportunities: initialOpportunities, searchPro
 
   const summary = summarizeOpportunities(opportunities)
 
-  function markApplied(id: string) {
+  async function markApplied(opportunity: Opportunity) {
+    if (appliedIds.has(opportunity.id) || pendingAppliedIds.has(opportunity.id)) return
+
+    if (!outputPort) {
+      setAppliedIds((current) => {
+        const next = new Set(current)
+        next.add(opportunity.id)
+        return next
+      })
+      return
+    }
+
+    setPendingAppliedIds((current) => {
+      const next = new Set(current)
+      next.add(opportunity.id)
+      return next
+    })
+    setApplyErrors((current) => {
+      const remaining = { ...current }
+      delete remaining[opportunity.id]
+      return remaining
+    })
+
+    const result = await outputPort.markApplied(buildMarkOpportunityAppliedInput(opportunity)).catch((error: unknown) => ({
+      success: false as const,
+      error: {
+        type: 'tracker_unavailable' as const,
+        message: error instanceof Error ? error.message : 'Tracker is unavailable right now.',
+      },
+      value: null,
+    }))
+
+    setPendingAppliedIds((current) => {
+      const next = new Set(current)
+      next.delete(opportunity.id)
+      return next
+    })
+
+    if (!result.success) {
+      setApplyErrors((current) => ({
+        ...current,
+        [opportunity.id]: getMarkAppliedErrorMessage(result.error),
+      }))
+      return
+    }
+
     setAppliedIds((current) => {
       const next = new Set(current)
-      next.add(id)
+      next.add(opportunity.id)
       return next
     })
   }
@@ -126,6 +186,8 @@ export function OpportunityFeed({ opportunities: initialOpportunities, searchPro
           {opportunities.map((opportunity, index) => {
             const matchBand = getOpportunityMatchBand(opportunity.matchPercentage)
             const tone = getMatchTone(matchBand)
+            const isMarkingApplied = pendingAppliedIds.has(opportunity.id)
+            const applyError = applyErrors[opportunity.id]
 
             return (
               <article
@@ -192,12 +254,13 @@ export function OpportunityFeed({ opportunities: initialOpportunities, searchPro
                       type="button"
                       variant={opportunity.applied ? 'secondary' : 'default'}
                       className="w-full"
-                      disabled={opportunity.applied}
-                      onClick={() => markApplied(opportunity.id)}
+                      disabled={opportunity.applied || isMarkingApplied}
+                      onClick={() => markApplied(opportunity)}
                     >
                       {opportunity.applied && <Check className="h-4 w-4" />}
-                      {opportunity.applied ? 'Applied' : 'Mark applied'}
+                      {opportunity.applied ? 'Applied' : isMarkingApplied ? 'Saving...' : 'Mark applied'}
                     </Button>
+                    {applyError && <p className="text-xs leading-5 text-destructive">{applyError}</p>}
                   </div>
                 </div>
               </article>
@@ -207,4 +270,12 @@ export function OpportunityFeed({ opportunities: initialOpportunities, searchPro
       </div>
     </div>
   )
+}
+
+function getMarkAppliedErrorMessage(error: MarkOpportunityAppliedError) {
+  if (error.type === 'missing_job_reference') return 'This role cannot be tracked until the job is saved.'
+  if (error.type === 'missing_resume_reference') return 'Choose a resume before tracking this application.'
+  if (error.type === 'already_applied') return 'This opportunity is already in your tracker.'
+  if (error.type === 'tracker_unavailable') return error.message ?? 'Tracker is unavailable right now.'
+  return 'Could not update the tracker.'
 }
