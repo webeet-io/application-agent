@@ -59,6 +59,7 @@ export interface Application {
   status: ApplicationStatus
   appliedAt: Date | null
   notes: string | null
+
 }
 
 export interface JobMatch {

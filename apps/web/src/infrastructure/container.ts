@@ -15,11 +15,18 @@ import { SupabaseSkillGapApplicationHistoryAdapter } from '@/adapters/db/Supabas
 import { SupabaseUserDeclaredSkillAdapter } from '@/adapters/db/SupabaseUserDeclaredSkillAdapter'
 import { SupabaseLearningProgressAdapter } from '@/adapters/db/SupabaseLearningProgressAdapter'
 import { DiscoverCompaniesUseCase } from '@/application/DiscoverCompaniesUseCase'
+import { OpenAIEmbeddingAdapter } from '@/adapters/llm/OpenAIEmbeddingAdapter'
+import { SupabaseApplicationRepositoryAdapter } from '@/adapters/db/SupabaseApplicationRepositoryAdapter'
 import { FetchCareerPageJobsUseCase } from '@/application/FetchCareerPageJobsUseCase'
 import { UploadResumeUseCase } from '@/application/UploadResumeUseCase'
 import { GenerateSkillGapPlanUseCase } from '@/application/GenerateSkillGapPlanUseCase'
 import { env } from './env'
 
+// --- 1. Your new adapters safely ABOVE the function ---
+export const embeddingAdapter = new OpenAIEmbeddingAdapter()
+export const applicationRepository = new SupabaseApplicationRepositoryAdapter()
+
+// --- 2. The lazyExecute wrapper function ---
 function lazyExecute<TArgs extends unknown[], TResult>(
   factory: () => { execute: (...args: TArgs) => TResult },
 ) {
@@ -36,6 +43,7 @@ function lazyExecute<TArgs extends unknown[], TResult>(
   }
 }
 
+// --- 3. The use case exports ---
 export const discoverCompaniesUseCase = lazyExecute((() => {
   const companyDiscovery = new OpenAICompanyDiscoveryAdapter(env.openai.apiKey())
   return new DiscoverCompaniesUseCase(companyDiscovery)
