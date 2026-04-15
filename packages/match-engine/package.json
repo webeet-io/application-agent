@@ -1,0 +1,19 @@
+{
+  "name": "@ceevee/match-engine",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@ceevee/types": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.1"
+  }
+}
