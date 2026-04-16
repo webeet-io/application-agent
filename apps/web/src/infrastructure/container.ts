@@ -11,6 +11,7 @@ import { OpenAIOnboardingAssistantAdapter } from '@/adapters/llm/OpenAIOnboardin
 import { PdfParseResumeTextExtractorAdapter } from '@/adapters/resume/PdfParseResumeTextExtractorAdapter'
 import { AdvanceOnboardingChatUseCase } from '@/application/AdvanceOnboardingChatUseCase'
 import { AttachResumeToOnboardingSessionUseCase } from '@/application/AttachResumeToOnboardingSessionUseCase'
+import { OpenAILearningResourceAdapter } from '@/adapters/llm/OpenAILearningResourceAdapter'
 import { AskChatUseCase } from '@/application/AskChatUseCase'
 import { CareerPageAdapter } from '@/adapters/career-pages/CareerPageAdapter'
 import { CompleteOnboardingUseCase } from '@/application/CompleteOnboardingUseCase'
@@ -19,9 +20,16 @@ import { ResolveUserOnboardingStateUseCase } from '@/application/ResolveUserOnbo
 import { StartOrResumeOnboardingSessionUseCase } from '@/application/StartOrResumeOnboardingSessionUseCase'
 import { SupabaseResumeRepositoryAdapter } from '@/adapters/db/SupabaseResumeRepositoryAdapter'
 import { SupabaseResumeStorageAdapter } from '@/adapters/storage/SupabaseResumeStorageAdapter'
+import { SupabaseMentorPreferenceAdapter } from '@/adapters/db/SupabaseMentorPreferenceAdapter'
+import { SupabaseResumeSignalAdapter } from '@/adapters/db/SupabaseResumeSignalAdapter'
+import { SupabaseJobOpportunitySignalAdapter } from '@/adapters/db/SupabaseJobOpportunitySignalAdapter'
+import { SupabaseSkillGapApplicationHistoryAdapter } from '@/adapters/db/SupabaseSkillGapApplicationHistoryAdapter'
+import { SupabaseUserDeclaredSkillAdapter } from '@/adapters/db/SupabaseUserDeclaredSkillAdapter'
+import { SupabaseLearningProgressAdapter } from '@/adapters/db/SupabaseLearningProgressAdapter'
 import { DiscoverCompaniesUseCase } from '@/application/DiscoverCompaniesUseCase'
 import { FetchCareerPageJobsUseCase } from '@/application/FetchCareerPageJobsUseCase'
 import { UploadResumeUseCase } from '@/application/UploadResumeUseCase'
+import { GenerateSkillGapPlanUseCase } from '@/application/GenerateSkillGapPlanUseCase'
 import { env } from './env'
 
 function lazyExecute<TArgs extends unknown[], TResult>(
@@ -164,3 +172,18 @@ export const completeOnboardingUseCase = lazyExecute((() => {
     careerProfiles,
   )
 }) satisfies () => CompleteOnboardingUseCase)
+
+export const generateSkillGapPlanUseCase = lazyExecute((() => {
+  const supabaseUrl = env.supabase.url()
+  const serviceRoleKey = env.supabase.serviceRoleKey()
+
+  return new GenerateSkillGapPlanUseCase({
+    mentorSkillGapPreferencePort: new SupabaseMentorPreferenceAdapter(supabaseUrl, serviceRoleKey),
+    resumeSignalPort: new SupabaseResumeSignalAdapter(supabaseUrl, serviceRoleKey),
+    jobOpportunitySignalPort: new SupabaseJobOpportunitySignalAdapter(supabaseUrl, serviceRoleKey),
+    applicationHistoryPort: new SupabaseSkillGapApplicationHistoryAdapter(supabaseUrl, serviceRoleKey),
+    userDeclaredSkillPort: new SupabaseUserDeclaredSkillAdapter(supabaseUrl, serviceRoleKey),
+    learningProgressPort: new SupabaseLearningProgressAdapter(supabaseUrl, serviceRoleKey),
+    learningResourcePort: new OpenAILearningResourceAdapter(env.openai.apiKey(), env.openai.chatModel()),
+  })
+}) satisfies () => GenerateSkillGapPlanUseCase)
