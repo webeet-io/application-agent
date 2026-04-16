@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import type { OnboardingSessionId } from '@ceevee/types'
 import { completeOnboardingUseCase } from '@/infrastructure/container'
 import { requireApiUser } from '@/modules/auth/server'
 
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
 
   const result = await completeOnboardingUseCase.execute({
     userId: auth.user.id,
-    sessionId: sessionId as never,
+    sessionId: sessionId as OnboardingSessionId,
     force,
   })
 

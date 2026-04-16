@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import type { OnboardingSessionId } from '@ceevee/types'
 import { advanceOnboardingChatUseCase } from '@/infrastructure/container'
 import { requireApiUser } from '@/modules/auth/server'
 
@@ -41,12 +42,12 @@ export async function POST(request: NextRequest) {
     action === 'kickoff'
       ? await advanceOnboardingChatUseCase.execute({
           userId: auth.user.id,
-          sessionId: sessionId as never,
+          sessionId: sessionId as OnboardingSessionId,
           action,
         })
       : await advanceOnboardingChatUseCase.execute({
           userId: auth.user.id,
-          sessionId: sessionId as never,
+          sessionId: sessionId as OnboardingSessionId,
           action,
           message:
             typeof payload === 'object' &&
