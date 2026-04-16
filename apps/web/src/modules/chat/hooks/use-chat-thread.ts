@@ -10,6 +10,74 @@ import {
   type ChatResponsePayload,
 } from './chat-thread-state'
 
+function extractNextErrorDetail(markup: string): string | null {
+  if (typeof DOMParser === 'undefined') {
+    return null
+  }
+
+  try {
+    const document = new DOMParser().parseFromString(markup, 'text/html')
+    const nextData = document.querySelector('#__NEXT_DATA__')?.textContent
+    if (!nextData) {
+      return null
+    }
+
+    const parsed = JSON.parse(nextData) as {
+      err?: {
+        message?: string
+        stack?: string
+      }
+    }
+
+    const detail = [parsed.err?.message, parsed.err?.stack].filter(
+      (part): part is string => Boolean(part),
+    )
+
+    return detail.length ? detail.join('\n\n') : null
+  } catch {
+    return null
+  }
+}
+
+function stripHtml(markup: string): string {
+  if (typeof DOMParser === 'undefined') {
+    return markup.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+  }
+
+  return new DOMParser().parseFromString(markup, 'text/html').body.textContent?.replace(/\s+/g, ' ').trim() ?? ''
+}
+
+function buildResponseDebugDetail(response: Response, responseText: string): string {
+  const contentType = response.headers.get('content-type') ?? 'unknown'
+  const nextErrorDetail = contentType.includes('text/html') ? extractNextErrorDetail(responseText) : null
+  const bodyExcerpt = contentType.includes('text/html')
+    ? stripHtml(responseText).slice(0, 600)
+    : responseText.slice(0, 600).trim()
+
+  return [
+    `HTTP ${response.status} ${response.statusText}`.trim(),
+    `Content-Type: ${contentType}`,
+    nextErrorDetail,
+    bodyExcerpt ? `Response excerpt:\n${bodyExcerpt}` : null,
+  ]
+    .filter((part): part is string => Boolean(part))
+    .join('\n\n')
+}
+
+function buildCaughtErrorDebugDetail(caughtError: unknown): string | null {
+  if (!(caughtError instanceof Error)) {
+    return typeof caughtError === 'string' ? caughtError : null
+  }
+
+  const detail = [caughtError.name ? `${caughtError.name}: ${caughtError.message}` : caughtError.message]
+
+  if ('debugDetail' in caughtError && typeof caughtError.debugDetail === 'string' && caughtError.debugDetail.trim()) {
+    detail.push(caughtError.debugDetail)
+  }
+
+  return detail.filter(Boolean).join('\n\n') || null
+}
+
 export function useChatThread() {
   const [messages, setMessages] = useState<ChatMessage[]>(starterMessages)
   const [input, setInput] = useState('')
@@ -39,13 +107,24 @@ export function useChatThread() {
         }),
       })
 
-      const payload = (await response.json().catch(() => null)) as ChatResponsePayload | null
+      const responseText = await response.text()
+      const payload = responseText
+        ? ((() => {
+            try {
+              return JSON.parse(responseText) as ChatResponsePayload
+            } catch {
+              return null
+            }
+          })())
+        : null
 
       if (!response.ok || !payload?.reply) {
         const failure = new Error(payload?.error ?? 'The assistant could not respond.') as Error & {
           debugDetail?: string
         }
-        failure.debugDetail = payload?.debugDetail
+        failure.debugDetail =
+          payload?.debugDetail ??
+          (responseText ? buildResponseDebugDetail(response, responseText) : `HTTP ${response.status} ${response.statusText}`.trim())
         throw failure
       }
 
@@ -58,11 +137,7 @@ export function useChatThread() {
         caughtError instanceof Error ? caughtError.message : 'The assistant could not respond.'
 
       setError(message)
-      setErrorDebugDetail(
-        caughtError instanceof Error && 'debugDetail' in caughtError && typeof caughtError.debugDetail === 'string'
-          ? caughtError.debugDetail
-          : null,
-      )
+      setErrorDebugDetail(buildCaughtErrorDebugDetail(caughtError))
 
       const assistantMessage = createAssistantFailureMessage()
 

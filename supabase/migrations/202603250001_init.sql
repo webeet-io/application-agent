@@ -109,37 +109,37 @@ alter table companies enable row level security;
 alter table job_listings enable row level security;
 alter table embeddings enable row level security;
 
-create policy if not exists "resumes_select_own" on resumes
+create policy "resumes_select_own" on resumes
   for select using (auth.uid() = user_id);
-create policy if not exists "resumes_insert_own" on resumes
+create policy "resumes_insert_own" on resumes
   for insert with check (auth.uid() = user_id);
-create policy if not exists "resumes_update_own" on resumes
+create policy "resumes_update_own" on resumes
   for update using (auth.uid() = user_id);
-create policy if not exists "resumes_delete_own" on resumes
+create policy "resumes_delete_own" on resumes
   for delete using (auth.uid() = user_id);
 
-create policy if not exists "applications_select_own" on applications
+create policy "applications_select_own" on applications
   for select using (auth.uid() = user_id);
-create policy if not exists "applications_insert_own" on applications
+create policy "applications_insert_own" on applications
   for insert with check (auth.uid() = user_id);
-create policy if not exists "applications_update_own" on applications
+create policy "applications_update_own" on applications
   for update using (auth.uid() = user_id);
-create policy if not exists "applications_delete_own" on applications
+create policy "applications_delete_own" on applications
   for delete using (auth.uid() = user_id);
 
-create policy if not exists "embeddings_select_own" on embeddings
+create policy "embeddings_select_own" on embeddings
   for select using (auth.uid() = user_id);
-create policy if not exists "embeddings_insert_own" on embeddings
+create policy "embeddings_insert_own" on embeddings
   for insert with check (auth.uid() = user_id);
-create policy if not exists "embeddings_update_own" on embeddings
+create policy "embeddings_update_own" on embeddings
   for update using (auth.uid() = user_id);
-create policy if not exists "embeddings_delete_own" on embeddings
+create policy "embeddings_delete_own" on embeddings
   for delete using (auth.uid() = user_id);
 
 -- Companies and job listings are readable by all authenticated users.
-create policy if not exists "companies_select_all" on companies
+create policy "companies_select_all" on companies
   for select using (auth.role() = 'authenticated');
-create policy if not exists "job_listings_select_all" on job_listings
+create policy "job_listings_select_all" on job_listings
   for select using (auth.role() = 'authenticated');
 
 -- Storage bucket for resumes
@@ -147,13 +147,11 @@ insert into storage.buckets (id, name, public)
 values ('resumes', 'resumes', false)
 on conflict (id) do nothing;
 
-alter table storage.objects enable row level security;
-
-create policy if not exists "resumes_storage_select_own" on storage.objects
+create policy "resumes_storage_select_own" on storage.objects
   for select using (bucket_id = 'resumes' and auth.uid() = owner);
-create policy if not exists "resumes_storage_insert_own" on storage.objects
+create policy "resumes_storage_insert_own" on storage.objects
   for insert with check (bucket_id = 'resumes' and auth.uid() = owner);
-create policy if not exists "resumes_storage_update_own" on storage.objects
+create policy "resumes_storage_update_own" on storage.objects
   for update using (bucket_id = 'resumes' and auth.uid() = owner);
-create policy if not exists "resumes_storage_delete_own" on storage.objects
+create policy "resumes_storage_delete_own" on storage.objects
   for delete using (bucket_id = 'resumes' and auth.uid() = owner);

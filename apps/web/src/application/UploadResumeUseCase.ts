@@ -71,7 +71,11 @@ export class UploadResumeUseCase {
 
     const saveResult = await this.repository.save(resume)
     if (!saveResult.success) {
-      return { success: false, error: { type: 'db_error', message: saveResult.error.message }, value: null }
+      const message = saveResult.error.type === 'db_error'
+        ? saveResult.error.message
+        : `Unexpected repository error: ${saveResult.error.type}`
+
+      return { success: false, error: { type: 'db_error', message }, value: null }
     }
 
     return { success: true, error: null, value: resume }

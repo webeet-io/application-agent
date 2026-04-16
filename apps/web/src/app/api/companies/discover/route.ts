@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { discoverCompaniesUseCase } from '@/infrastructure/container'
+import { requireApiUser } from '@/modules/auth/server'
 
 // Delivery layer responsibility: parse the HTTP request, call the use case, return a response.
 // No business logic here.
 export async function POST(request: NextRequest) {
+  const auth = await requireApiUser()
+  if (!auth.ok) return auth.response
+
   let body: unknown
   try {
     body = await request.json()

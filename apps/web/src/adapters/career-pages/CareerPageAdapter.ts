@@ -1,5 +1,6 @@
 import type { ICareerPagePort, CareerPageResult, CareerPageError, JobListing } from '@/ports/outbound/ICareerPagePort'
 import type { AttemptResult, ATSProvider } from '@ceevee/types'
+import { detectATSProviderFromUrl } from '@/domain/ats-provider-detection'
 
 type JsonValue = string | number | boolean | null | JsonObject | JsonValue[]
 interface JsonObject {
@@ -8,7 +9,7 @@ interface JsonObject {
 
 export class CareerPageAdapter implements ICareerPagePort {
   async fetchJobs(url: string, provider?: ATSProvider): Promise<AttemptResult<CareerPageError, CareerPageResult>> {
-    const detectedProvider = provider && provider !== 'unknown' ? provider : detectProviderFromUrl(url)
+    const detectedProvider = provider && provider !== 'unknown' ? provider : detectATSProviderFromUrl(url).provider
 
     if (detectedProvider === 'greenhouse') {
       return fetchGreenhouseJobs(url)
@@ -16,6 +17,24 @@ export class CareerPageAdapter implements ICareerPagePort {
 
     if (detectedProvider === 'lever') {
       return fetchLeverJobs(url)
+    }
+
+    if (detectedProvider === 'ashby') {
+      return fetchAshbyJobs(url)
+    }
+
+    if (detectedProvider === 'personio') {
+      return fetchPersonioJobs(url)
+    }
+
+    // Workday, Softgarden, and dvinci have no stable public JSON API for MVP.
+    // Workday is fully JS-rendered — a plain fetch returns a shell page with no job data.
+    // Softgarden and dvinci have no documented public endpoints.
+    // Best-effort: fall through to the generic JSON-LD scraper, which works for any
+    // company that embeds structured data. Returns an empty list (not an error) if none found.
+    // Full support for these providers requires a headless browser — tracked as a follow-up.
+    if (detectedProvider === 'workday' || detectedProvider === 'softgarden' || detectedProvider === 'dvinci') {
+      return fetchGenericJobs(url)
     }
 
     if (detectedProvider === 'unknown') {
@@ -117,6 +136,161 @@ async function fetchLeverJobs(url: string): Promise<AttemptResult<CareerPageErro
   }
 }
 
+async function fetchAshbyJobs(url: string): Promise<AttemptResult<CareerPageError, CareerPageResult>> {
+  const slug = extractAshbySlug(url)
+  if (!slug) {
+    return { success: false, error: { type: 'parse_failed', raw: 'Unable to resolve Ashby organization slug.' }, value: null }
+  }
+
+  // Ashby exposes a public posting list API — no auth required.
+  // POST with the organization slug, returns a results array of job postings.
+  const apiUrl = 'https://api.ashbyhq.com/posting.list'
+  let response: Response
+  try {
+    response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ organizationHostedJobsPageName: slug }),
+      redirect: 'follow',
+    })
+  } catch (error) {
+    return {
+      success: false,
+      error: { type: 'fetch_failed', url: apiUrl, message: error instanceof Error ? error.message : 'network error' },
+      value: null,
+    }
+  }
+
+  if (!response.ok) {
+    return { success: false, error: { type: 'fetch_failed', url: apiUrl, message: `HTTP ${response.status}` }, value: null }
+  }
+
+  let data: JsonValue
+  try {
+    data = (await response.json()) as JsonValue
+  } catch (error) {
+    return {
+      success: false,
+      error: { type: 'parse_failed', raw: error instanceof Error ? error.message : 'invalid json' },
+      value: null,
+    }
+  }
+
+  const results = Array.isArray((data as JsonObject).results) ? ((data as JsonObject).results as JsonValue[]) : []
+  const jobs: JobListing[] = results
+    .map((item) => {
+      const obj = item as JsonObject
+      const locationObj = obj.location as JsonObject | undefined
+      return {
+        title: readString(obj.title) || 'Untitled role',
+        location: readString(locationObj?.locationStr ?? locationObj?.name ?? obj.locationName) || 'Unknown',
+        url: readString(obj.jobUrl ?? obj.applyUrl) || '',
+        description: readString(obj.descriptionHtml ?? obj.description) || '',
+      }
+    })
+    .filter((job) => job.title !== 'Untitled role' || job.url !== '')
+
+  return { success: true, error: null, value: { jobs, atsProvider: 'ashby' } }
+}
+
+export function extractAshbySlug(url: string): string | null {
+  try {
+    const parsed = new URL(url)
+    if (!parsed.hostname.toLowerCase().includes('ashbyhq.com')) return null
+    // jobs.ashbyhq.com/{slug} — slug is the first path segment
+    const pathParts = parsed.pathname.split('/').filter(Boolean)
+    return pathParts[0] ?? null
+  } catch {
+    return null
+  }
+}
+
+async function fetchPersonioJobs(url: string): Promise<AttemptResult<CareerPageError, CareerPageResult>> {
+  const slug = extractPersonioSlug(url)
+  if (!slug) {
+    return { success: false, error: { type: 'parse_failed', raw: 'Unable to resolve Personio company slug.' }, value: null }
+  }
+
+  // Personio exposes a public XML feed — no auth required.
+  // Try .de first (more common in German market), fall back to .com.
+  const xmlUrls = [
+    `https://${slug}.jobs.personio.de/xml`,
+    `https://${slug}.jobs.personio.com/xml`,
+  ]
+
+  let xmlText: string | null = null
+  let lastFetchError: CareerPageError | null = null
+
+  for (const xmlUrl of xmlUrls) {
+    const result = await fetchText(xmlUrl)
+    if (result.success) {
+      xmlText = result.value
+      break
+    }
+    lastFetchError = result.error
+  }
+
+  if (!xmlText) {
+    return {
+      success: false,
+      error: lastFetchError ?? { type: 'fetch_failed', url, message: 'All Personio XML endpoints failed' },
+      value: null,
+    }
+  }
+
+  const jobs = parsePersonioXml(xmlText)
+  return { success: true, error: null, value: { jobs, atsProvider: 'personio' } }
+}
+
+export function extractPersonioSlug(url: string): string | null {
+  try {
+    const host = new URL(url).hostname.toLowerCase()
+    // Pattern: {slug}.jobs.personio.de or {slug}.jobs.personio.com
+    const match = host.match(/^([^.]+)\.jobs\.personio/)
+    return match?.[1] ?? null
+  } catch {
+    return null
+  }
+}
+
+export function parsePersonioXml(xml: string): JobListing[] {
+  const jobs: JobListing[] = []
+  const positionRegex = /<position>([\s\S]*?)<\/position>/gi
+  let match: RegExpExecArray | null
+
+  while ((match = positionRegex.exec(xml))) {
+    const block = match[1]
+    const title = extractXmlTag(block, 'name')
+    const location = extractXmlTag(block, 'office') || extractXmlTag(block, 'department')
+    const url = extractXmlTag(block, 'url')
+    const description = extractXmlTag(block, 'jobDescription') || extractXmlTag(block, 'description')
+
+    if (!title && !url) continue
+
+    jobs.push({
+      title: title || 'Untitled role',
+      location: location || 'Unknown',
+      url,
+      description,
+    })
+  }
+
+  return jobs
+}
+
+// Minimal XML tag extractor — no external dependency needed for Personio's predictable structure.
+// Strips CDATA wrappers and HTML tags to return plain text content.
+function extractXmlTag(xml: string, tag: string): string {
+  const regex = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i')
+  const match = regex.exec(xml)
+  if (!match) return ''
+  return match[1]
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 async function fetchGenericJobs(url: string): Promise<AttemptResult<CareerPageError, CareerPageResult>> {
   const htmlResult = await fetchText(url)
   if (!htmlResult.success) return htmlResult
@@ -214,21 +388,6 @@ function extractLeverCompany(url: string): string | null {
   }
 }
 
-function detectProviderFromUrl(url: string): ATSProvider {
-  try {
-    const host = new URL(url).hostname.toLowerCase()
-    if (host.includes('greenhouse.io')) return 'greenhouse'
-    if (host.includes('lever.co')) return 'lever'
-    if (host.includes('workday') || host.includes('myworkdayjobs')) return 'workday'
-    if (host.includes('ashbyhq.com')) return 'ashby'
-    if (host.includes('personio')) return 'personio'
-    if (host.includes('softgarden')) return 'softgarden'
-    if (host.includes('dvinci')) return 'dvinci'
-    return 'unknown'
-  } catch {
-    return 'unknown'
-  }
-}
 
 function extractJobsFromJsonLd(html: string, baseUrl: string): { jobs: JobListing[]; hadParseError: boolean } {
   const scriptRegex = /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi
