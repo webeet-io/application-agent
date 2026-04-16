@@ -18,7 +18,7 @@ import {
 } from 'lucide-react'
 
 const topNav = [
-  { href: '/', label: 'Opportunities', icon: Briefcase },
+  { href: '/opportunities', label: 'Opportunities', icon: Briefcase },
   { href: '/career-profile', label: 'Career Profile', icon: UserCircle },
   { href: '/tracker', label: 'Tracker', icon: LayoutGrid },
   { href: '/learning', label: 'Learning', icon: BookOpen },
