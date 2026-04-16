@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import type { ApplicationId } from '@ceevee/types'
+import type { ApplicationId, ApplicationStatus } from '@ceevee/types'
 import { updateApplicationStatusUseCase } from '@/infrastructure/container'
-import type { ApplicationOutcome } from '@/application/UpdateApplicationStatusUseCase'
 import { createClient } from '@/lib/supabase/server'
 
 // Delivery layer responsibility: parse the HTTP request, call the use case, return a response.
@@ -27,10 +26,13 @@ export async function PATCH(request: NextRequest, context: { params: { id: strin
   }
 
   const statusRaw = getString(body, 'status')
-  const status = normalizeStatus(statusRaw)
-
-  if (!status) {
+  if (!statusRaw) {
     return NextResponse.json({ error: 'status is required' }, { status: 400 })
+  }
+
+  const status = normalizeStatus(statusRaw)
+  if (!status) {
+    return NextResponse.json({ error: 'invalid status' }, { status: 400 })
   }
 
   const result = await updateApplicationStatusUseCase.execute(applicationId as ApplicationId, authResult.data.user.id, status)
@@ -49,21 +51,20 @@ export async function PATCH(request: NextRequest, context: { params: { id: strin
   return NextResponse.json({ ok: true })
 }
 
-function normalizeStatus(value: string | null): ApplicationOutcome | null {
+function normalizeStatus(value: string | null): ApplicationStatus | null {
   if (!value) return null
 
   const normalized = value.toLowerCase()
-  const allowed: ApplicationOutcome[] = [
+  const allowed: ApplicationStatus[] = [
     'saved',
     'applied',
     'interview',
     'rejected',
     'offer',
     'withdrawn',
-    'no_response',
   ]
 
-  return allowed.includes(normalized as ApplicationOutcome) ? (normalized as ApplicationOutcome) : null
+  return allowed.includes(normalized as ApplicationStatus) ? (normalized as ApplicationStatus) : null
 }
 
 function getString(body: unknown, key: string): string | null {

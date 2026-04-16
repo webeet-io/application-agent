@@ -15,5 +15,10 @@
 - PATCH update status (success)
 - Invalid payload (400)
 
+## Implemented In This Branch
+- `apps/web/src/application/MarkApplicationAppliedUseCase.test.ts`
+- `apps/web/src/application/UpdateApplicationStatusUseCase.test.ts`
+- `apps/web/src/app/api/applications/[id]/status/route.test.ts`
+
 ## Non-Goals (for now)
 - End-to-end UI flows

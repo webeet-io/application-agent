@@ -7,8 +7,9 @@
 ## Outcomes
 - interviewing
 - rejected
-- no_response
 - offer
+
+`no_response` remains a planned follow-up outcome and is not accepted in this MVP API yet.
 
 ## Timing
 - User updates are manual (no background automation in MVP).
