@@ -2,23 +2,26 @@
 // The only place in the app where adapters are instantiated and wired to use cases.
 // Route handlers and MCP tools import use cases from here — never directly from adapters.
 
-import { OpenAICompanyDiscoveryAdapter } from '@/adapters/llm/OpenAICompanyDiscoveryAdapter'
-import { OpenAIChatAssistantAdapter } from '@/adapters/llm/OpenAIChatAssistantAdapter'
-import { OpenAILearningResourceAdapter } from '@/adapters/llm/OpenAILearningResourceAdapter'
-import { AskChatUseCase } from '@/application/AskChatUseCase'
 import { CareerPageAdapter } from '@/adapters/career-pages/CareerPageAdapter'
-import { SupabaseResumeRepositoryAdapter } from '@/adapters/db/SupabaseResumeRepositoryAdapter'
-import { SupabaseResumeStorageAdapter } from '@/adapters/storage/SupabaseResumeStorageAdapter'
-import { SupabaseMentorPreferenceAdapter } from '@/adapters/db/SupabaseMentorPreferenceAdapter'
-import { SupabaseResumeSignalAdapter } from '@/adapters/db/SupabaseResumeSignalAdapter'
+import { SupabaseApplicationRepositoryAdapter } from '@/adapters/db/SupabaseApplicationRepositoryAdapter'
 import { SupabaseJobOpportunitySignalAdapter } from '@/adapters/db/SupabaseJobOpportunitySignalAdapter'
+import { SupabaseLearningProgressAdapter } from '@/adapters/db/SupabaseLearningProgressAdapter'
+import { SupabaseMentorPreferenceAdapter } from '@/adapters/db/SupabaseMentorPreferenceAdapter'
+import { SupabaseResumeRepositoryAdapter } from '@/adapters/db/SupabaseResumeRepositoryAdapter'
+import { SupabaseResumeSignalAdapter } from '@/adapters/db/SupabaseResumeSignalAdapter'
 import { SupabaseSkillGapApplicationHistoryAdapter } from '@/adapters/db/SupabaseSkillGapApplicationHistoryAdapter'
 import { SupabaseUserDeclaredSkillAdapter } from '@/adapters/db/SupabaseUserDeclaredSkillAdapter'
-import { SupabaseLearningProgressAdapter } from '@/adapters/db/SupabaseLearningProgressAdapter'
+import { OpenAIChatAssistantAdapter } from '@/adapters/llm/OpenAIChatAssistantAdapter'
+import { OpenAICompanyDiscoveryAdapter } from '@/adapters/llm/OpenAICompanyDiscoveryAdapter'
+import { OpenAILearningResourceAdapter } from '@/adapters/llm/OpenAILearningResourceAdapter'
+import { SupabaseResumeStorageAdapter } from '@/adapters/storage/SupabaseResumeStorageAdapter'
+import { AskChatUseCase } from '@/application/AskChatUseCase'
 import { DiscoverCompaniesUseCase } from '@/application/DiscoverCompaniesUseCase'
 import { FetchCareerPageJobsUseCase } from '@/application/FetchCareerPageJobsUseCase'
-import { UploadResumeUseCase } from '@/application/UploadResumeUseCase'
 import { GenerateSkillGapPlanUseCase } from '@/application/GenerateSkillGapPlanUseCase'
+import { MarkApplicationAppliedUseCase } from '@/application/MarkApplicationAppliedUseCase'
+import { UpdateApplicationStatusUseCase } from '@/application/UpdateApplicationStatusUseCase'
+import { UploadResumeUseCase } from '@/application/UploadResumeUseCase'
 import { env } from './env'
 
 function lazyExecute<TArgs extends unknown[], TResult>(
@@ -62,6 +65,24 @@ export const uploadResumeUseCase = lazyExecute((() => {
 
   return new UploadResumeUseCase(resumeStorage, resumeRepository)
 }) satisfies () => UploadResumeUseCase)
+
+export const markApplicationAppliedUseCase = lazyExecute((() => {
+  const applicationRepository = new SupabaseApplicationRepositoryAdapter(
+    env.supabase.url(),
+    env.supabase.serviceRoleKey(),
+  )
+
+  return new MarkApplicationAppliedUseCase(applicationRepository)
+}) satisfies () => MarkApplicationAppliedUseCase)
+
+export const updateApplicationStatusUseCase = lazyExecute((() => {
+  const applicationRepository = new SupabaseApplicationRepositoryAdapter(
+    env.supabase.url(),
+    env.supabase.serviceRoleKey(),
+  )
+
+  return new UpdateApplicationStatusUseCase(applicationRepository)
+}) satisfies () => UpdateApplicationStatusUseCase)
 
 export const generateSkillGapPlanUseCase = lazyExecute((() => {
   const supabaseUrl = env.supabase.url()
