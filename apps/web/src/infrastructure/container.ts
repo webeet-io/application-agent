@@ -2,34 +2,37 @@
 // The only place in the app where adapters are instantiated and wired to use cases.
 // Route handlers and MCP tools import use cases from here — never directly from adapters.
 
-import { OpenAICompanyDiscoveryAdapter } from '@/adapters/llm/OpenAICompanyDiscoveryAdapter'
-import { OpenAIChatAssistantAdapter } from '@/adapters/llm/OpenAIChatAssistantAdapter'
+import { CareerPageAdapter } from '@/adapters/career-pages/CareerPageAdapter'
+import { SupabaseApplicationRepositoryAdapter } from '@/adapters/db/SupabaseApplicationRepositoryAdapter'
 import { SupabaseCareerProfileRepositoryAdapter } from '@/adapters/db/SupabaseCareerProfileRepositoryAdapter'
+import { SupabaseJobOpportunitySignalAdapter } from '@/adapters/db/SupabaseJobOpportunitySignalAdapter'
+import { SupabaseLearningProgressAdapter } from '@/adapters/db/SupabaseLearningProgressAdapter'
+import { SupabaseMentorPreferenceAdapter } from '@/adapters/db/SupabaseMentorPreferenceAdapter'
 import { SupabaseOnboardingChatMessageRepositoryAdapter } from '@/adapters/db/SupabaseOnboardingChatMessageRepositoryAdapter'
 import { SupabaseOnboardingSessionRepositoryAdapter } from '@/adapters/db/SupabaseOnboardingSessionRepositoryAdapter'
-import { OpenAIOnboardingAssistantAdapter } from '@/adapters/llm/OpenAIOnboardingAssistantAdapter'
-import { PdfParseResumeTextExtractorAdapter } from '@/adapters/resume/PdfParseResumeTextExtractorAdapter'
-import { AdvanceOnboardingChatUseCase } from '@/application/AdvanceOnboardingChatUseCase'
-import { AttachResumeToOnboardingSessionUseCase } from '@/application/AttachResumeToOnboardingSessionUseCase'
-import { OpenAILearningResourceAdapter } from '@/adapters/llm/OpenAILearningResourceAdapter'
-import { AskChatUseCase } from '@/application/AskChatUseCase'
-import { CareerPageAdapter } from '@/adapters/career-pages/CareerPageAdapter'
-import { CompleteOnboardingUseCase } from '@/application/CompleteOnboardingUseCase'
-import { ListOnboardingChatMessagesUseCase } from '@/application/ListOnboardingChatMessagesUseCase'
-import { ResolveUserOnboardingStateUseCase } from '@/application/ResolveUserOnboardingStateUseCase'
-import { StartOrResumeOnboardingSessionUseCase } from '@/application/StartOrResumeOnboardingSessionUseCase'
 import { SupabaseResumeRepositoryAdapter } from '@/adapters/db/SupabaseResumeRepositoryAdapter'
-import { SupabaseResumeStorageAdapter } from '@/adapters/storage/SupabaseResumeStorageAdapter'
-import { SupabaseMentorPreferenceAdapter } from '@/adapters/db/SupabaseMentorPreferenceAdapter'
 import { SupabaseResumeSignalAdapter } from '@/adapters/db/SupabaseResumeSignalAdapter'
-import { SupabaseJobOpportunitySignalAdapter } from '@/adapters/db/SupabaseJobOpportunitySignalAdapter'
 import { SupabaseSkillGapApplicationHistoryAdapter } from '@/adapters/db/SupabaseSkillGapApplicationHistoryAdapter'
 import { SupabaseUserDeclaredSkillAdapter } from '@/adapters/db/SupabaseUserDeclaredSkillAdapter'
-import { SupabaseLearningProgressAdapter } from '@/adapters/db/SupabaseLearningProgressAdapter'
+import { OpenAIChatAssistantAdapter } from '@/adapters/llm/OpenAIChatAssistantAdapter'
+import { OpenAICompanyDiscoveryAdapter } from '@/adapters/llm/OpenAICompanyDiscoveryAdapter'
+import { OpenAILearningResourceAdapter } from '@/adapters/llm/OpenAILearningResourceAdapter'
+import { OpenAIOnboardingAssistantAdapter } from '@/adapters/llm/OpenAIOnboardingAssistantAdapter'
+import { PdfParseResumeTextExtractorAdapter } from '@/adapters/resume/PdfParseResumeTextExtractorAdapter'
+import { SupabaseResumeStorageAdapter } from '@/adapters/storage/SupabaseResumeStorageAdapter'
+import { AdvanceOnboardingChatUseCase } from '@/application/AdvanceOnboardingChatUseCase'
+import { AskChatUseCase } from '@/application/AskChatUseCase'
+import { AttachResumeToOnboardingSessionUseCase } from '@/application/AttachResumeToOnboardingSessionUseCase'
+import { CompleteOnboardingUseCase } from '@/application/CompleteOnboardingUseCase'
 import { DiscoverCompaniesUseCase } from '@/application/DiscoverCompaniesUseCase'
 import { FetchCareerPageJobsUseCase } from '@/application/FetchCareerPageJobsUseCase'
-import { UploadResumeUseCase } from '@/application/UploadResumeUseCase'
 import { GenerateSkillGapPlanUseCase } from '@/application/GenerateSkillGapPlanUseCase'
+import { ListOnboardingChatMessagesUseCase } from '@/application/ListOnboardingChatMessagesUseCase'
+import { MarkApplicationAppliedUseCase } from '@/application/MarkApplicationAppliedUseCase'
+import { ResolveUserOnboardingStateUseCase } from '@/application/ResolveUserOnboardingStateUseCase'
+import { StartOrResumeOnboardingSessionUseCase } from '@/application/StartOrResumeOnboardingSessionUseCase'
+import { UpdateApplicationStatusUseCase } from '@/application/UpdateApplicationStatusUseCase'
+import { UploadResumeUseCase } from '@/application/UploadResumeUseCase'
 import { env } from './env'
 
 function lazyExecute<TArgs extends unknown[], TResult>(
@@ -54,7 +57,10 @@ export const discoverCompaniesUseCase = lazyExecute((() => {
 }) satisfies () => DiscoverCompaniesUseCase)
 
 export const askChatUseCase = lazyExecute((() => {
-  const chatAssistant = new OpenAIChatAssistantAdapter(env.openai.apiKey(), env.openai.chatModel())
+  const chatAssistant = new OpenAIChatAssistantAdapter(
+    env.openai.apiKey(),
+    env.openai.chatModel(),
+  )
 
   return new AskChatUseCase(chatAssistant)
 }) satisfies () => AskChatUseCase)
@@ -173,6 +179,24 @@ export const completeOnboardingUseCase = lazyExecute((() => {
   )
 }) satisfies () => CompleteOnboardingUseCase)
 
+export const markApplicationAppliedUseCase = lazyExecute((() => {
+  const applicationRepository = new SupabaseApplicationRepositoryAdapter(
+    env.supabase.url(),
+    env.supabase.serviceRoleKey(),
+  )
+
+  return new MarkApplicationAppliedUseCase(applicationRepository)
+}) satisfies () => MarkApplicationAppliedUseCase)
+
+export const updateApplicationStatusUseCase = lazyExecute((() => {
+  const applicationRepository = new SupabaseApplicationRepositoryAdapter(
+    env.supabase.url(),
+    env.supabase.serviceRoleKey(),
+  )
+
+  return new UpdateApplicationStatusUseCase(applicationRepository)
+}) satisfies () => UpdateApplicationStatusUseCase)
+
 export const generateSkillGapPlanUseCase = lazyExecute((() => {
   const supabaseUrl = env.supabase.url()
   const serviceRoleKey = env.supabase.serviceRoleKey()
@@ -180,10 +204,22 @@ export const generateSkillGapPlanUseCase = lazyExecute((() => {
   return new GenerateSkillGapPlanUseCase({
     mentorSkillGapPreferencePort: new SupabaseMentorPreferenceAdapter(supabaseUrl, serviceRoleKey),
     resumeSignalPort: new SupabaseResumeSignalAdapter(supabaseUrl, serviceRoleKey),
-    jobOpportunitySignalPort: new SupabaseJobOpportunitySignalAdapter(supabaseUrl, serviceRoleKey),
-    applicationHistoryPort: new SupabaseSkillGapApplicationHistoryAdapter(supabaseUrl, serviceRoleKey),
-    userDeclaredSkillPort: new SupabaseUserDeclaredSkillAdapter(supabaseUrl, serviceRoleKey),
+    jobOpportunitySignalPort: new SupabaseJobOpportunitySignalAdapter(
+      supabaseUrl,
+      serviceRoleKey,
+    ),
+    applicationHistoryPort: new SupabaseSkillGapApplicationHistoryAdapter(
+      supabaseUrl,
+      serviceRoleKey,
+    ),
+    userDeclaredSkillPort: new SupabaseUserDeclaredSkillAdapter(
+      supabaseUrl,
+      serviceRoleKey,
+    ),
     learningProgressPort: new SupabaseLearningProgressAdapter(supabaseUrl, serviceRoleKey),
-    learningResourcePort: new OpenAILearningResourceAdapter(env.openai.apiKey(), env.openai.chatModel()),
+    learningResourcePort: new OpenAILearningResourceAdapter(
+      env.openai.apiKey(),
+      env.openai.chatModel(),
+    ),
   })
 }) satisfies () => GenerateSkillGapPlanUseCase)
