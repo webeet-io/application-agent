@@ -73,6 +73,8 @@ Implemented so far:
 - Added match-engine exports in `packages/match-engine/src/index.ts`
 - Added example resume/job scenarios in `packages/match-engine/src/fixtures.ts`
 - Added executable Vitest scenarios in `packages/match-engine/src/score-resume-against-job.test.ts`
+- Added a simple frontend scoring preview component in `apps/web/src/modules/match/components/match-preview.tsx`
+- Added a dedicated preview route in `apps/web/src/app/match-preview/page.tsx`
 
 The match engine currently evaluates:
 - knockout criteria such as required languages, location constraints, seniority mismatch, and missing critical technologies
@@ -111,6 +113,23 @@ Display tone mapping:
 - `high` -> `success`
 
 The frontend can later decide whether `danger` is red, `warning` is yellow, and `success` is green. The match engine should expose semantic UI hints, not hard-coded colors.
+
+## Frontend preview route
+
+A dedicated preview route now exists so the scoring output can already be reviewed visually in the frontend.
+
+Current route:
+- `/match-preview`
+
+Purpose:
+- show the current fallback scoring output in a readable layout
+- validate that the output structure is understandable for later frontend integration
+- prepare the UI layer before the full resume-parsing and job-ingestion pipeline is connected
+
+Current state:
+- the route uses fixture-based example data from `packages/match-engine/src/fixtures.ts`
+- the displayed result is still calculated by the real deterministic scoring engine
+- the page already renders score, score band, strengths, weaknesses, improvements, and recommended skills to learn
 
 ## CareerProfile input strategy
 

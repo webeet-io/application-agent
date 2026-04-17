@@ -108,3 +108,12 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+html {
+  scroll-behavior: smooth;
+}
+
+::selection {
+  color: oklch(1 0 0);
+  background: color-mix(in srgb, var(--brand-mauve) 70%, transparent);
+}
